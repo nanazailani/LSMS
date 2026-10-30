@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IPTB-LSMS · Login</title>
+<style>
+:root{--red:#d4161c;--red-d:#a80f14;--yel:#f5c400;--ink:#17202a;--mut:#5c6670;--line:#dfe3e8;--bg:#f6f7f9;--no:#b3261e;--nob:#fde4e2}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.45}
+[hidden]{display:none!important}
+.top{height:10px;background:var(--red);box-shadow:0 5px 0 var(--yel)}
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.card{width:min(400px,100%);background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px 26px 24px;box-shadow:0 8px 30px rgba(0,0,0,.08)}
+.plate{display:flex;justify-content:center;margin-bottom:6px}
+.plate img{height:72px;width:auto;display:block}
+.brand{text-align:center;font-weight:900;font-size:24px;color:var(--red);letter-spacing:.5px}
+h1{margin:6px 0 2px;font-size:22px;text-align:center}
+.sub{margin:0 0 20px;text-align:center;color:var(--mut);font-size:14px}
+label{display:block;font-size:14px;font-weight:600;margin-bottom:14px}
+input{display:block;width:100%;margin-top:4px;font:inherit;padding:10px 11px;border:1px solid #c7cdd4;border-radius:4px;background:#fff;color:var(--ink)}
+.pw{position:relative}.pw input{padding-right:64px}
+.show{position:absolute;right:6px;bottom:5px;border:0;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--mut);cursor:pointer;padding:6px 8px;border-radius:4px}
+.show:hover{background:var(--bg)}
+.btn{width:100%;background:var(--red);color:#fff;border:0;border-radius:4px;padding:11px 18px;font:inherit;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--red-d)}
+.err{background:var(--nob);color:var(--no);border-radius:4px;padding:9px 12px;font-size:14px;font-weight:600;margin-bottom:14px}
+.hint{margin:16px 0 0;text-align:center;color:var(--mut);font-size:13px}
+:focus-visible{outline:3px solid #1a5fd0;outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="top"></div>
+<main>
+  <form class="card" id="f" novalidate>
+    <div class="plate"><img src="images/buraqoil-logo.png" alt="Buraqoil" onerror="this.hidden=true;document.getElementById('bt').hidden=false"></div>
+    <div class="brand" id="bt" hidden>BURAQOIL</div>
+    <h1>IPTB-LSMS</h1>
+    <p class="sub">Lubricant Stock Management System</p>
+    <div class="err" id="err" role="alert" hidden></div>
+    <label>Username or email<input id="u" autocomplete="username" autofocus></label>
+    <label>Password<span class="pw"><input id="p" type="password" autocomplete="current-password"><button class="show" id="sh" type="button" aria-label="Show password">Show</button></span></label>
+    <button class="btn" type="submit">Log in</button>
+    <p class="hint">Demo account: admin / admin123</p>
+  </form>
+</main>
+<script>
+// Front-end demo login only. Real security needs a server (e.g. Laravel auth).
+const USERS = [{user:'admin', pass:'admin123', name:'Administrator', role:'admin'}];
+const KEY = 'lsms_user';
+// Staff accounts are created by the admin in admin/staff.html
+let STAFF = [];
+try { STAFF = JSON.parse(localStorage.getItem('lsms_staff')) || []; } catch (e) {}
+const HOME = 'module_4/index.html';      // page shown after a successful login
+const $ = id => document.getElementById(id);
+
+try { if (sessionStorage.getItem(KEY)) location.replace(HOME); } catch (e) {}
+
+$('sh').onclick = () => {
+  const show = $('p').type === 'password';
+  $('p').type = show ? 'text' : 'password';
+  $('sh').textContent = show ? 'Hide' : 'Show';
+  $('sh').setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+};
+$('f').onsubmit = e => {
+  e.preventDefault();
+  const u = $('u').value.trim(), p = $('p').value;
+  const err = m => { $('err').textContent = m; $('err').hidden = false; };
+  if (!u || !p) return err('Enter your username or email, and your password.');
+  const s = STAFF.find(x => x.email === u.toLowerCase() && x.pass === p);
+  const hit = USERS.find(x => x.user.toLowerCase() === u.toLowerCase() && x.pass === p)
+    || (s && {name:s.name, role:'staff', loc:s.loc});
+  if (!hit) { $('p').value = ''; $('p').focus(); return err('Wrong username, email or password.'); }
+  try {
+    sessionStorage.setItem(KEY, hit.name);
+    sessionStorage.setItem('lsms_role', hit.role);
+    sessionStorage.setItem('lsms_loc', hit.loc || '');
+  } catch (e) { return err('Your browser blocked storage, so login cannot be remembered.'); }
+  location.href = HOME;
+};
+</script>
+</body>
+</html>

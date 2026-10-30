@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IPTB-LSMS · Sales and Stock Adjustment</title>
+<script src="../lsms.js"></script>
+<style>
+:root{--red:#d4161c;--red-d:#a80f14;--yel:#f5c400;--ink:#17202a;--mut:#5c6670;--line:#dfe3e8;--bg:#f6f7f9;--ok:#1d7a3e;--okb:#e1f4e7;--lo:#8a5a00;--lob:#fdf0cc;--no:#b3261e;--nob:#fde4e2;--cv:#1a4fa0;--cvb:#e3ecfb}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.45}
+header{padding:10px 0;border-bottom:5px solid var(--red);box-shadow:0 5px 0 var(--yel);margin-bottom:5px}
+.hin{padding:0 28px;display:flex;gap:14px;align-items:center}
+[hidden]{display:none!important}
+.logo-img{height:56px;width:auto;display:block}
+.logo{font-weight:900;font-size:24px;letter-spacing:.5px;color:var(--red);line-height:1}
+.logo small{display:block;font-size:10px;font-weight:600;color:var(--mut);letter-spacing:0;margin-top:3px}
+header h2{margin:0;font-size:17px;line-height:1.3}header p{margin:2px 0 0;color:var(--mut);font-size:13.5px}
+main{max-width:1360px;margin:0 auto;padding:30px clamp(16px,5vw,64px) 60px}
+h1{margin:0 0 6px;font-size:30px}h3{margin:44px 0 6px;font-size:21px}
+.lead{max-width:640px;color:var(--mut);margin:0 0 20px}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin:0 0 22px;overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:10px 14px;font-weight:600;color:var(--mut);white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--red)}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.stat{border:1px solid var(--line);border-left:4px solid var(--yel);border-radius:4px;padding:10px 20px 10px 14px;min-width:138px}
+.stat b{display:block;font-size:26px}.stat span{color:var(--mut);font-size:14px}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.bar label{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--mut)}
+input,select{font:inherit;padding:9px 11px;border:1px solid #c7cdd4;border-radius:4px;background:#fff;color:var(--ink)}
+input[readonly]{background:var(--bg)}
+#q,#q2{flex:1 1 260px}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--red);color:#fff;border:0;border-radius:4px;padding:9px 18px;font-weight:600}
+.btn:hover{background:var(--red-d)}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid #c7cdd4}.btn.sec:hover{background:var(--bg)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.ib{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:16px;margin-right:8px;padding:0;line-height:1}
+.ib:hover{background:var(--bg)}.ib.d{background:var(--nob);border-color:#f0b4b0}.ib.d:hover{background:#fbd3cf}
+.ib:disabled{opacity:.35;cursor:not-allowed}
+.pimg{width:50px;height:50px;border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;background:#fff;overflow:hidden}
+.pimg img{width:100%;height:100%;object-fit:contain}
+:focus-visible{outline:3px solid #1a5fd0;outline-offset:2px}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th{background:var(--bg);text-align:left;font-size:14px;padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:13px 14px;border-bottom:1px solid var(--line);font-size:15px;vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.n{text-align:right}th.n{text-align:right}
+.sub{display:block;color:var(--mut);font-size:13px}
+.badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:12px;white-space:nowrap}
+.in{background:var(--okb);color:var(--ok)}.lo{background:var(--lob);color:var(--lo)}.no{background:var(--nob);color:var(--no)}.cv{background:var(--cvb);color:var(--cv)}
+.chip{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-size:13px;margin:2px 4px 2px 0;white-space:nowrap}
+.neg{color:var(--no);font-weight:700}.pos{color:var(--ok);font-weight:700}
+.cnt{color:var(--mut);font-size:13px;margin:8px 2px 0}
+.empty{padding:34px;text-align:center;color:var(--mut)}
+@keyframes fl{from{background:#fff3b0}to{background:transparent}}
+.flash td{animation:fl 1.6s ease-out}
+dialog{border:0;border-radius:8px;padding:0;width:min(720px,94vw);box-shadow:0 12px 50px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(23,32,42,.5)}
+.dh{padding:16px 22px;border-bottom:1px solid var(--line);font-weight:700;font-size:18px}
+.db{padding:18px 22px;max-height:68vh;overflow:auto}
+.df{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;background:var(--bg)}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+.g label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}
+.g .full{grid-column:1/-1}
+.ln{display:grid;grid-template-columns:minmax(0,1fr) 70px 96px 84px 30px;gap:8px;align-items:center;margin-bottom:8px}
+.ln span.t{text-align:right;font-size:14px}
+.ln .x{border:0;background:none;color:var(--red);font-size:20px}
+.ln select{width:100%;min-width:0}
+.lhd{font-size:12px;color:var(--mut);margin-bottom:4px}
+.lh{font-size:13px;color:var(--mut);margin:14px 0 6px;display:flex;justify-content:space-between;align-items:center}
+.err{color:var(--no);font-size:14px;margin-top:10px;min-height:20px;font-weight:600}
+.err ul{margin:0;padding-left:20px}
+.bad{border-color:var(--no)!important;background:#fff6f5!important}
+.note{font-size:13px;color:var(--mut);margin-top:10px}
+.tot{text-align:right;font-weight:700;margin-top:6px}
+.panel{border:1px solid var(--line);border-top:4px solid var(--red);border-radius:6px;padding:18px 20px;margin-bottom:10px}
+.ph{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.ph h3{margin:0 0 4px}.ph .lead{margin:0}
+.ph label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}
+.formula{background:var(--bg);border-radius:4px;padding:8px 12px;font-size:13px;color:var(--mut);margin:14px 0}
+.ci{width:96px;text-align:right}
+.ri{width:100%;min-width:230px}
+tr.var td{background:#fff8d6}
+.pf{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;font-size:14px}
+.pf div{display:flex;gap:10px}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:6px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:92vw;text-align:center}
+#toast.on{opacity:1}
+dialog.wide{width:min(860px,96vw)}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.locsel{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600;min-width:260px}
+.locpill{display:inline-block;background:var(--bg);border:1px solid var(--line);border-left:4px solid var(--red);border-radius:4px;padding:8px 14px;font-size:14px}
+.locpill small{display:block;color:var(--mut);font-size:12px}
+body.staff .loccol{display:none}
+@media(max-width:860px){.hin{padding:0 16px;gap:12px}.logo-img{height:42px}}
+@media(max-width:620px){main{padding:22px 14px}.g{grid-template-columns:1fr}.ln{grid-template-columns:minmax(0,1fr) 60px 80px}.ln span.t,.ln .x{grid-row:2}.lhd{display:none}}
+</style>
+</head>
+<body>
+<header>
+<div class="hin">
+  <img class="logo-img" src="../images/buraqoil-logo.png" alt="Buraqoil" onerror="this.hidden=true;document.getElementById('lt').hidden=false">
+  <div class="logo" id="lt" hidden>BURAQOIL<small>Stesen Komuniti Anda</small></div>
+  <div><h2>Lubricant Stock Management System</h2><p>IPTB Sdn Bhd, Module 3: Sales and Stock Adjustment</p></div>
+</div>
+</header>
+
+<main>
+  <div class="top">
+    <div>
+      <h1>Sales and stock adjustment</h1>
+      <p class="lead">Record daily lubricant sales, damaged or expired items and physical counts. Every change updates the stock balance automatically.</p>
+    </div>
+    <div id="locBox"></div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tS" role="tab" aria-selected="true" aria-controls="pS">Sales records</button>
+    <button class="tab" id="tA" role="tab" aria-selected="false" aria-controls="pA">Stock adjustment and variance</button>
+  </div>
+
+  <!-- ---------- Sales records ---------- -->
+  <section id="pS" role="tabpanel" aria-labelledby="tS">
+    <div class="stats" id="sStats"></div>
+    <div class="bar">
+      <input id="q" type="search" placeholder="Search sale ID, SKU or product" aria-label="Search sales">
+      <select id="fp" aria-label="Filter by product"></select>
+      <label>From <input id="fFrom" type="date" aria-label="From date"></label>
+      <label>to <input id="fTo" type="date" aria-label="To date"></label>
+      <button class="btn" id="addSale">Add sale</button>
+    </div>
+    <div class="wrap">
+      <table>
+        <thead><tr><th>Sale</th><th>Date</th><th class="loccol">Location</th><th>Products sold</th><th class="n">Units</th><th class="n">Total (RM)</th><th>Actions</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+    <p class="cnt" id="sCnt"></p>
+  </section>
+
+  <!-- ---------- Stock adjustment and variance ---------- -->
+  <section id="pA" role="tabpanel" aria-labelledby="tA" hidden>
+    <div class="stats" id="aStats"></div>
+    <div class="bar">
+      <input id="q2" type="search" placeholder="Search reference, SKU or product" aria-label="Search adjustments">
+      <select id="ft" aria-label="Filter by type">
+        <option value="">All types</option><option value="damaged">Damaged</option><option value="expired">Expired</option><option value="count">Count variance</option>
+      </select>
+      <button class="btn sec" id="addAdj">Record damaged / expired</button>
+      <button class="btn" id="cntBtn">Enter physical count</button>
+    </div>
+
+    <div class="panel" id="pc" hidden>
+      <div class="ph">
+        <div><h3>Physical stock count</h3><p class="lead">Enter the quantity counted on the shelf. Leave a product blank if it was not counted.</p></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <label id="cLocL">Location<select id="cLoc"></select></label>
+          <label>Count date<input id="cDate" type="date"></label>
+        </div>
+      </div>
+      <div class="formula">System balance = opening stock + received &minus; sold &minus; damaged/expired &nbsp;·&nbsp; Variance = physical count &minus; system balance</div>
+      <div class="wrap">
+        <table style="min-width:860px">
+          <thead><tr><th>SKU</th><th>Product</th><th class="n">System balance</th><th class="n">Physical count</th><th class="n">Variance</th><th>Remark</th></tr></thead>
+          <tbody id="cb"></tbody>
+        </table>
+      </div>
+      <div class="err" id="cErr" role="alert"></div>
+      <div class="pf"><span id="cSum"></span><div><button class="btn sec" id="cCancel" type="button">Cancel</button><button class="btn" id="cOk" type="button">Confirm count</button></div></div>
+    </div>
+
+    <h3 style="margin-top:28px">Adjustment history</h3>
+    <p class="lead">Every write-off and count variance, kept so discrepancies can be traced later.</p>
+    <div class="wrap">
+      <table style="min-width:900px">
+        <thead><tr><th>Ref</th><th>Date</th><th class="loccol">Location</th><th>Type</th><th>Product</th><th class="n">Qty change</th><th>Reason / remark</th><th>Actions</th></tr></thead>
+        <tbody id="ab"></tbody>
+      </table>
+    </div>
+    <p class="cnt" id="aCnt"></p>
+  </section>
+
+  <h3>Stock on hand</h3>
+  <p class="lead">Updated automatically whenever a sale or stock adjustment is saved, edited or removed.</p>
+  <div class="wrap">
+    <table style="min-width:1100px">
+      <thead><tr><th>Image</th><th>SKU</th><th>Product</th><th class="loccol">Location</th><th>Type</th><th class="n">Pack</th><th class="n">Cost (RM)</th><th class="n">Price (RM)</th><th class="n">Min stock</th><th class="n">Current stock</th><th>Status</th></tr></thead>
+      <tbody id="sb"></tbody>
+    </table>
+  </div>
+</main>
+
+<dialog id="dSale">
+  <div class="dh" id="fTitle">Add sale</div>
+  <div class="db">
+    <div class="g"><label>Sale date<input id="fDate" type="date"></label><label id="sLocL">Location<select id="sLoc"></select></label></div>
+    <div class="lh"><b>Products sold</b><button class="btn sec" id="addLn" type="button">Add product</button></div>
+    <div class="ln lhd"><span>Product</span><span>Qty</span><span>Price (RM)</span><span class="t">Line total</span><span></span></div>
+    <div id="lines"></div>
+    <div class="tot" id="fTot"></div>
+    <p class="note" id="fNote" hidden>Changing a quantity adjusts stock by the difference between the old and new quantities.</p>
+    <div class="err" id="fErr" role="alert"></div>
+  </div>
+  <div class="df"><button class="btn sec" id="fCancel" type="button">Cancel</button><button class="btn" id="fSave" type="button">Save sale</button></div>
+</dialog>
+
+<dialog id="dAdj">
+  <div class="dh">Record damaged or expired items</div>
+  <div class="db">
+    <div class="g">
+      <label class="full" id="aLocL">Location<select id="aLoc"></select></label>
+      <label>Date<input id="aDate" type="date"></label>
+      <label>Reason<select id="aReason"><option value="damaged">Damaged</option><option value="expired">Expired</option></select></label>
+      <label class="full">Product<select id="aProd"></select></label>
+      <label class="full">Quantity (units)<input id="aQty" type="number" min="1" step="1"></label>
+      <label class="full">Note<input id="aNote" maxlength="120" placeholder="e.g. Tin dented during delivery, leaking at the seam"></label>
+    </div>
+    <div class="err" id="aErr" role="alert"></div>
+  </div>
+  <div class="df"><button class="btn sec" id="aCancel" type="button">Cancel</button><button class="btn" id="aSave" type="button">Save adjustment</button></div>
+</dialog>
+
+<dialog id="dView" class="wide">
+  <div class="dh" id="vTitle"></div>
+  <div class="db"><div class="doc" id="vBody"></div></div>
+  <div class="df"><button class="btn sec" id="vClose" type="button">Close</button><button class="btn" id="vPrint" type="button">🖨️ Print invoice</button></div>
+</dialog>
+
+<dialog id="dConf">
+  <div class="dh" id="kTitle"></div>
+  <div class="db" id="kBody"></div>
+  <div class="df"><button class="btn sec" id="kNo" type="button"></button><button class="btn" id="kYes" type="button"></button></div>
+</dialog>
+
+<div id="toast" role="status"></div>
+
+<script>
+// ---------- Sample data (resets on reload, same 10 products as the other modules) ----------
+// Stock is kept per station: PHG = Kuantan, KTN = Kota Bharu (see ../lsms.js)
+const products = [
+  {sku:'LUB-001',name:'Grantt Stellar 1000',grade:'10W-40',type:'Engine oil',pack:4,cost:78,price:98,min:10,stock:{PHG:24,KTN:12}},
+  {sku:'LUB-002',name:'Grantt Stellar 1000',grade:'15W-50',type:'Engine oil',pack:4,cost:80,price:100,min:8,stock:{PHG:3,KTN:6}},
+  {sku:'LUB-003',name:'Grantt Stellar 1000',grade:'10W-30',type:'Engine oil',pack:4,cost:78,price:98,min:8,stock:{PHG:15,KTN:4}},
+  {sku:'LUB-004',name:'Grantt Stellar 1000',grade:'20W-50',type:'Engine oil',pack:4,cost:80,price:100,min:8,stock:{PHG:0,KTN:9}},
+  {sku:'LUB-005',name:'BuraqLube Mineral Jaso FB 2T',grade:'2T',type:'Motorcycle oil',pack:0.5,cost:4.5,price:6.5,min:30,stock:{PHG:48,KTN:20}},
+  {sku:'LUB-006',name:'BuraqLube API SL/CF',grade:'20W-50',type:'Engine oil',pack:1,cost:22,price:30,min:12,stock:{PHG:12,KTN:8}},
+  {sku:'LUB-007',name:'BuraqLube Mineral SAE 4T',grade:'4T',type:'Motorcycle oil',pack:0.5,cost:8,price:11,min:24,stock:{PHG:60,KTN:30}},
+  {sku:'LUB-008',name:'Pennzoil Gearplus',grade:'SAE 90 EP',type:'Gear oil',pack:4,cost:105,price:135,min:6,stock:{PHG:14,KTN:3}},
+  {sku:'LUB-009',name:'Pennzoil Gearplus',grade:'SAE 140 EP',type:'Gear oil',pack:4,cost:110,price:140,min:6,stock:{PHG:5,KTN:7}},
+  {sku:'LUB-010',name:'Repsol MXR PLUS 4T',grade:'10W-40',type:'Motorcycle oil',pack:1,cost:34,price:45,min:12,stock:{PHG:20,KTN:15}}
+];
+let sales = [
+  {id:'SAL-001',date:'2026-09-22',loc:'PHG',items:[{sku:'LUB-005',qty:10,price:6.5},{sku:'LUB-007',qty:6,price:11}]},
+  {id:'SAL-002',date:'2026-09-29',loc:'PHG',items:[{sku:'LUB-001',qty:4,price:98},{sku:'LUB-006',qty:3,price:30}]},
+  {id:'SAL-003',date:'2026-10-03',loc:'PHG',items:[{sku:'LUB-008',qty:2,price:135}]},
+  {id:'SAL-004',date:'2026-10-06',loc:'PHG',items:[{sku:'LUB-002',qty:2,price:100},{sku:'LUB-005',qty:8,price:6.5},{sku:'LUB-010',qty:5,price:45}]},
+  {id:'SAL-005',date:'2026-10-08',loc:'PHG',items:[{sku:'LUB-003',qty:3,price:98},{sku:'LUB-007',qty:12,price:11}]},
+  {id:'SAL-006',date:'2026-10-02',loc:'KTN',items:[{sku:'LUB-001',qty:2,price:98},{sku:'LUB-007',qty:8,price:11}]},
+  {id:'SAL-007',date:'2026-10-07',loc:'KTN',items:[{sku:'LUB-005',qty:6,price:6.5},{sku:'LUB-010',qty:3,price:45}]}
+];
+// qty is the signed stock change: write-offs are negative, count variances can be either sign
+let adjs = [
+  {id:'ADJ-001',date:'2026-09-30',loc:'PHG',type:'damaged',sku:'LUB-007',qty:-2,note:'Bottles cracked during unloading'},
+  {id:'ADJ-002',date:'2026-10-05',loc:'PHG',type:'expired',sku:'LUB-005',qty:-4,note:'Past expiry date (09/2026)'},
+  {id:'ADJ-003',date:'2026-10-07',loc:'PHG',type:'count',sku:'LUB-009',qty:-1,note:'One pail missing from shelf, under check with station supervisor'},
+  {id:'ADJ-004',date:'2026-10-06',loc:'KTN',type:'damaged',sku:'LUB-002',qty:-1,note:'Tin dented during unloading'}
+];
+const TYPES = {damaged:['Damaged','no'],expired:['Expired','lo'],count:['Count variance','cv']};
+let nextSale = 8, nextAdj = 5, editId = null, viewId = null, onYes = null, flashSku = [], flashRow = [];
+
+// ---------- Helpers ----------
+const $ = id => document.getElementById(id);
+const P = sku => products.find(p => p.sku === sku);
+const money = n => n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+const sign = n => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n);
+const signMoney = n => (n > 0 ? '+' : n < 0 ? '−' : '') + money(Math.abs(n));
+const signCls = n => n < 0 ? 'neg' : n > 0 ? 'pos' : '';
+const dmy = d => d.split('-').reverse().join('/');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const units = s => s.items.reduce((a,i) => a + i.qty, 0);
+const total = s => s.items.reduce((a,i) => a + i.qty * i.price, 0);
+const today = () => {const d = new Date(); return new Date(d - d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const isWhole = v => /^\d+$/.test(String(v).trim());
+const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),3200)}
+function status(p, loc){const n=p.stock[loc];return n<=0?['Out of stock','no']:n<=p.min?['Low stock','lo']:['In stock','in']}
+function bottle(p){const c=p.type==='Gear oil'?'#0f5f7a':p.type==='Motorcycle oil'?'#c27a00':'#1c2733';return `<svg width="26" height="36" viewBox="0 0 26 36" role="img" aria-label="${esc(p.name)} bottle"><rect x="8" y="0" width="10" height="5" rx="1.5" fill="#2b2f36"/><path d="M6 6h14l3 5v21a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V11z" fill="${c}"/><rect x="3.5" y="17" width="19" height="9" rx="1.5" fill="#fff"/><text x="13" y="23.6" font-size="4.4" font-weight="700" text-anchor="middle" fill="#17202a" font-family="Arial">${esc(p.grade.replace('SAE ',''))}</text></svg>`}
+function pic(p){return `<span class="pimg"><img src="../module%201/images/${p.sku}.jpg" alt="${esc(p.name+' '+p.grade)}" loading="lazy" data-sku="${p.sku}" onerror="this.outerHTML=bottle(P(this.dataset.sku))"></span>`}
+function label(p){return `${p.sku} · ${p.name} ${p.grade} (${p.pack} L)`}
+function showErr(box, errs){$(box).innerHTML = errs.length ? '<ul>' + errs.map(e => `<li>${esc(e)}</li>`).join('') + '</ul>' : ''; return !errs.length}
+function clearBad(scope){scope.querySelectorAll('.bad').forEach(e => e.classList.remove('bad'))}
+function stockMsg(delta){return Object.keys(delta).filter(s => delta[s]).map(s => s + ' ' + sign(delta[s])).join(', ')}
+function confirmBox(o){$('kTitle').textContent=o.title;$('kBody').innerHTML=o.body;$('kNo').textContent=o.no;$('kYes').textContent=o.yes;onYes=o.run;$('dConf').showModal()}
+
+// ---------- Locations ----------
+// Admin sees every station and can filter; staff only see their own station.
+const locName = LSMS.locName, locShort = LSMS.locShort;
+const scope = () => $('fl') && $('fl').value ? [$('fl').value] : LSMS.locs().map(l => l.id);
+const inScope = r => scope().includes(r.loc);
+const locOpts = sel => LSMS.LOCATIONS.map(l => `<option value="${l.id}" ${l.id===sel?'selected':''}>${esc(l.name)}</option>`).join('');
+// location a new record goes to: the staff member's station, or the admin's choice in the form
+function setupLocField(sel, lab, cur, locked){
+  if(!LSMS.isAdmin){lab.hidden = true; sel.innerHTML = locOpts(LSMS.myLoc); return}
+  lab.hidden = false;
+  sel.innerHTML = (cur ? '' : '<option value="">Select location</option>') + locOpts(cur || (scope().length === 1 ? scope()[0] : ''));
+  sel.disabled = !!locked;
+}
+const locCell = l => `<td class="loccol">${esc(locShort(l))}</td>`;
+
+// ---------- Render ----------
+function renderSales(){
+  const q = $('q').value.trim().toLowerCase(), fp = $('fp').value, from = $('fFrom').value, to = $('fTo').value;
+  const badRange = from && to && from > to, all = sales.filter(inScope);
+  const rows = badRange ? [] : all.filter(s => (!fp || s.items.some(i => i.sku === fp)) && (!from || s.date >= from) && (!to || s.date <= to) &&
+      (!q || s.id.toLowerCase().includes(q) || s.items.some(i => i.sku.toLowerCase().includes(q) || P(i.sku).name.toLowerCase().includes(q))))
+    .sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  $('tb').innerHTML = rows.length ? rows.map(s => `<tr class="${flashRow.includes(s.id)?'flash':''}">
+    <td><b>${s.id}</b></td><td>${dmy(s.date)}</td>${locCell(s.loc)}<td>${s.items.map(i => `<span class="chip">${i.sku} &times;${i.qty}</span>`).join('')}</td>
+    <td class="n">${units(s)}</td><td class="n">${money(total(s))}</td>
+    <td style="white-space:nowrap"><button class="ib" data-a="v" data-id="${s.id}" title="View invoice" aria-label="View invoice ${s.id}">🧾</button><button class="ib" data-a="e" data-id="${s.id}" title="Edit" aria-label="Edit ${s.id}">✏️</button><button class="ib d" data-a="d" data-id="${s.id}" title="Delete" aria-label="Delete ${s.id}">🗑️</button></td></tr>`).join('')
+    : `<tr><td colspan="7" class="empty">${badRange ? 'The From date cannot be after the To date.' : 'No sales match your search. Clear the filters or add a new sale.'}</td></tr>`;
+  $('sCnt').textContent = `Showing ${rows.length} of ${plural(all.length,'sale')}`;
+  $('sStats').innerHTML = [[all.length,'Sales'],[all.reduce((a,s)=>a+units(s),0),'Units sold'],['RM '+money(all.reduce((a,s)=>a+total(s),0)),'Sales value']]
+    .map(s => `<div class="stat"><b>${s[0]}</b><span>${s[1]}</span></div>`).join('');
+}
+function renderAdj(){
+  const q = $('q2').value.trim().toLowerCase(), ft = $('ft').value, all = adjs.filter(inScope);
+  const rows = all.filter(a => (!ft || a.type === ft) && (!q || [a.id, a.sku, P(a.sku).name, a.note].some(v => v.toLowerCase().includes(q))))
+    .sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  $('ab').innerHTML = rows.length ? rows.map(a => {const p = P(a.sku), t = TYPES[a.type], locked = a.type === 'count';
+    return `<tr class="${flashRow.includes(a.id)?'flash':''}"><td><b>${a.id}</b></td><td>${dmy(a.date)}</td>${locCell(a.loc)}<td><span class="badge ${t[1]}">${t[0]}</span></td>
+    <td><b>${p.sku} · ${esc(p.name)} ${esc(p.grade)}</b><span class="sub">${p.pack} L</span></td><td class="n ${signCls(a.qty)}">${sign(a.qty)}</td><td>${esc(a.note)}</td>
+    <td><button class="ib d" data-id="${a.id}" ${locked ? 'disabled title="Count variances cannot be deleted. Enter a new physical count to correct the balance."' : 'title="Delete"'} aria-label="Delete ${a.id}">🗑️</button></td></tr>`}).join('')
+    : `<tr><td colspan="8" class="empty">No adjustments match your search. Clear the filters or record a new adjustment.</td></tr>`;
+  $('aCnt').textContent = `Showing ${rows.length} of ${plural(all.length,'adjustment')}`;
+  const net = all.filter(a => a.type === 'count').reduce((s,a) => s + a.qty, 0);
+  $('aStats').innerHTML = [[all.length,'Adjustments'],[-all.filter(a => a.type !== 'count').reduce((s,a) => s + a.qty, 0),'Units damaged / expired'],[sign(net),'Net count variance (units)',signCls(net)]]
+    .map(s => `<div class="stat"><b class="${s[2]||''}">${s[0]}</b><span>${s[1]}</span></div>`).join('');
+}
+function renderStock(){
+  $('sb').innerHTML = scope().flatMap(l => products.map(p => {const s=status(p,l);return `<tr class="${flashSku.includes(l+p.sku)?'flash':''}"><td>${pic(p)}</td><td>${p.sku}</td><td><b>${esc(p.name)}</b><span class="sub">${esc(p.grade)}</span></td>${locCell(l)}<td>${p.type}</td><td class="n">${p.pack} L</td><td class="n">${money(p.cost)}</td><td class="n">${money(p.price)}</td><td class="n">${p.min}</td><td class="n">${p.stock[l]}</td><td><span class="badge ${s[1]}">${s[0]}</span></td></tr>`})).join('');
+}
+function render(){renderSales(); renderAdj(); renderStock(); flashSku = []; flashRow = []}
+
+// ---------- Tabs ----------
+function showTab(t){
+  [['tS','pS'],['tA','pA']].forEach(([b,p]) => {const on = b === t; $(b).setAttribute('aria-selected', on); $(p).hidden = !on});
+}
+
+// ---------- Add / edit sale ----------
+// the sale's location: fixed when editing, otherwise the staff member's station or the admin's choice
+const saleLoc = () => editId ? sales.find(s => s.id === editId).loc : $('sLoc').value;
+// units that can be sold on this line: current stock plus what this sale already took when editing
+const oldQty = sku => editId ? (sales.find(s => s.id === editId).items.find(i => i.sku === sku) || {qty:0}).qty : 0;
+const avail = sku => saleLoc() ? P(sku).stock[saleLoc()] + oldQty(sku) : 0;
+function lineHtml(it){
+  const loc = saleLoc();
+  const opts = products.map(p => `<option value="${p.sku}" ${p.sku===it.sku?'selected':''}>${esc(label(p))}${loc ? ` — ${avail(p.sku)} ${editId?'available':'in stock'}` : ''}</option>`).join('');
+  return `<div class="ln"><select class="ls" aria-label="Product"><option value="">Select product</option>${opts}</select>
+    <input class="lq" type="number" min="1" step="1" value="${it.qty||''}" placeholder="Qty" aria-label="Quantity">
+    <input class="lp" type="number" value="${it.price ?? ''}" placeholder="Price" aria-label="Selling price in RM" readonly tabindex="-1">
+    <span class="t">0.00</span><button class="x" type="button" aria-label="Remove product">&times;</button></div>`;
+}
+function addLine(it={}){$('lines').insertAdjacentHTML('beforeend', lineHtml(it)); sumForm()}
+function sumForm(){
+  let t = 0;
+  document.querySelectorAll('#lines .ln').forEach(r => {const v=(+r.querySelector('.lq').value||0)*(+r.querySelector('.lp').value||0);t+=v;r.querySelector('.t').textContent=money(v)});
+  $('fTot').textContent = 'Sale total: RM ' + money(t);
+}
+// redraw the lines (keeping what was entered) so the stock shown matches the chosen location
+function relines(){
+  const keep = [...document.querySelectorAll('#lines .ln')].map(r => ({sku:r.querySelector('.ls').value, qty:r.querySelector('.lq').value, price:r.querySelector('.lp').value}));
+  $('lines').innerHTML = ''; keep.forEach(addLine);
+}
+function openSale(id){
+  editId = id || null;
+  const s = id ? sales.find(x => x.id === id) : null;
+  $('fTitle').textContent = s ? 'Edit sale ' + s.id : 'Add sale';
+  $('fDate').value = s ? s.date : today(); $('fDate').max = today();
+  setupLocField($('sLoc'), $('sLocL'), s ? s.loc : '', !!s);   // a sale's location cannot change
+  $('lines').innerHTML = ''; $('fErr').innerHTML = ''; $('fNote').hidden = !s; clearBad($('dSale'));
+  (s ? s.items : [{}]).forEach(addLine);
+  $('dSale').showModal();
+}
+function saveSale(){
+  clearBad($('dSale'));
+  const errs = [], items = [], seen = new Set(), bad = el => el.classList.add('bad');
+  const date = $('fDate').value, loc = saleLoc();
+  if(!date){errs.push('Choose the sale date.'); bad($('fDate'))}
+  else if(date > today()){errs.push('The sale date cannot be in the future.'); bad($('fDate'))}
+  if(!loc){errs.push('Select the location where the sale was made.'); bad($('sLoc'))}
+  const lines = [...document.querySelectorAll('#lines .ln')];
+  if(!lines.length) errs.push('Add at least one product to the sale.');
+  if(loc) lines.forEach((r, n) => {
+    const k = n + 1, sel = r.querySelector('.ls'), qi = r.querySelector('.lq'), sku = sel.value;
+    if(!sku){errs.push(`Select a product on line ${k}, or remove the empty line.`); bad(sel); return}
+    if(seen.has(sku)){errs.push(`${sku} appears twice. Combine it into one line.`); bad(sel); return}
+    seen.add(sku);
+    if(!isWhole(qi.value) || +qi.value < 1){errs.push(`Quantity on line ${k} must be a whole number of at least 1.`); bad(qi); return}
+    const a = avail(sku);
+    if(+qi.value > a){errs.push(`Only ${plural(a,'unit')} of ${sku} ${a===1?'is':'are'} ${editId?'available':'in stock'} at ${locShort(loc)}. Reduce the quantity on line ${k}.`); bad(qi); return}
+    items.push({sku, qty:+qi.value, price:+r.querySelector('.lp').value});
+  });
+  if(!showErr('fErr', errs)) return;
+  // net stock change per SKU: old quantity goes back, new quantity comes out
+  const delta = {};
+  items.forEach(i => delta[i.sku] = (delta[i.sku]||0) - i.qty);
+  if(editId) sales.find(x => x.id === editId).items.forEach(i => delta[i.sku] = (delta[i.sku]||0) + i.qty);
+  for(const s in delta) P(s).stock[loc] += delta[s];
+  let id = editId;
+  if(editId) Object.assign(sales.find(x => x.id === editId), {date, items});
+  else {id = 'SAL-' + String(nextSale++).padStart(3,'0'); sales.push({id, date, loc, items})}
+  flashRow = [id]; flashSku = Object.keys(delta).filter(s => delta[s]).map(s => loc + s);
+  const msg = stockMsg(delta);
+  $('dSale').close(); render(); toast(`Sale ${id} ${editId ? 'updated' : 'saved'} at ${locShort(loc)}` + (msg ? '. Stock: ' + msg : '. Stock unchanged'));
+}
+
+// ---------- Invoice (shown when viewing a sale) ----------
+function invoiceHtml(s){
+  return LSMS.docHead(s.loc, 'Invoice', [['Invoice no.', s.id], ['Date', dmy(s.date)]]) +
+    `<div class="doc-to"><small>Bill to</small><b>Cash sale (walk-in customer)</b></div>
+    <table class="doc-lines"><thead><tr><th>#</th><th>Product</th><th class="n">Qty</th><th class="n">Unit price (RM)</th><th class="n">Amount (RM)</th></tr></thead><tbody>` +
+    s.items.map((i,k) => {const p = P(i.sku); return `<tr><td>${k+1}</td><td>${esc(p.name)} ${esc(p.grade)}<span class="sub">${p.sku} · ${p.pack} L</span></td><td class="n">${i.qty}</td><td class="n">${money(i.price)}</td><td class="n">${money(i.qty*i.price)}</td></tr>`}).join('') +
+    `</tbody><tfoot><tr><td colspan="2">Total</td><td class="n">${units(s)}</td><td></td><td class="n">RM ${money(total(s))}</td></tr></tfoot></table>
+    <p class="doc-note">Thank you for your purchase. Generated by IPTB-LSMS on ${dmy(today())}.</p>`;
+}
+function openView(id){
+  viewId = id;
+  $('vTitle').textContent = 'Invoice · ' + id;
+  $('vBody').innerHTML = invoiceHtml(sales.find(x => x.id === id));
+  $('dView').showModal();
+}
+function openDelSale(id){
+  const s = sales.find(x => x.id === id);
+  confirmBox({title:'Delete this sale?', no:'Keep sale', yes:'Delete sale',
+    body:`<p style="margin-top:0">Sale <b>${s.id}</b> (${dmy(s.date)}, ${esc(locShort(s.loc))}) will be removed and its units returned to stock:</p><ul>` +
+      s.items.map(i => `<li>${i.sku}: <span class="pos">+${plural(i.qty,'unit')}</span></li>`).join('') + '</ul>',
+    run:() => {
+      s.items.forEach(i => P(i.sku).stock[s.loc] += i.qty);
+      flashSku = s.items.map(i => s.loc + i.sku);
+      sales = sales.filter(x => x !== s); render();
+      toast(`Sale ${s.id} deleted. Stock: ` + s.items.map(i => i.sku + ' +' + i.qty).join(', '));
+    }});
+}
+
+// ---------- Damaged / expired ----------
+function fillAdjProd(){
+  const l = $('aLoc').value, cur = $('aProd').value;
+  $('aProd').innerHTML = '<option value="">Select product</option>' + products.map(p => `<option value="${p.sku}" ${p.sku===cur?'selected':''}>${esc(label(p))}${l ? ` — ${p.stock[l]} in stock` : ''}</option>`).join('');
+}
+function openAdj(){
+  $('aDate').value = today(); $('aDate').max = today(); $('aReason').value = 'damaged';
+  setupLocField($('aLoc'), $('aLocL'), '', false);
+  $('aProd').value = ''; fillAdjProd();
+  $('aQty').value = ''; $('aNote').value = ''; $('aErr').innerHTML = ''; clearBad($('dAdj'));
+  $('dAdj').showModal();
+}
+function saveAdj(){
+  clearBad($('dAdj'));
+  const errs = [], bad = el => el.classList.add('bad');
+  const loc = $('aLoc').value, date = $('aDate').value, type = $('aReason').value, sku = $('aProd').value, qv = $('aQty').value, note = $('aNote').value.trim();
+  if(!loc){errs.push('Select the location.'); bad($('aLoc'))}
+  if(!date){errs.push('Choose the date.'); bad($('aDate'))}
+  else if(date > today()){errs.push('The date cannot be in the future.'); bad($('aDate'))}
+  if(!sku){errs.push('Select the product.'); bad($('aProd'))}
+  if(!isWhole(qv) || +qv < 1){errs.push('Quantity must be a whole number of at least 1.'); bad($('aQty'))}
+  else if(sku && loc && +qv > P(sku).stock[loc]){const n = P(sku).stock[loc]; errs.push(`Only ${plural(n,'unit')} of ${sku} ${n===1?'is':'are'} in stock at ${locShort(loc)}. Reduce the quantity.`); bad($('aQty'))}
+  if(!note){errs.push('Enter a note explaining the damage or expiry.'); bad($('aNote'))}
+  if(!showErr('aErr', errs)) return;
+  const id = 'ADJ-' + String(nextAdj++).padStart(3,'0');
+  adjs.push({id, date, loc, type, sku, qty:-qv, note});
+  P(sku).stock[loc] -= +qv;
+  flashRow = [id]; flashSku = [loc + sku];
+  $('dAdj').close(); render(); toast(`${id} saved (${TYPES[type][0]}, ${locShort(loc)}). Stock: ${sku} −${qv}`);
+}
+function openDelAdj(id){
+  const a = adjs.find(x => x.id === id);
+  if(a.type === 'count') return;
+  confirmBox({title:'Delete this adjustment?', no:'Keep adjustment', yes:'Delete adjustment',
+    body:`<p style="margin-top:0">Adjustment <b>${a.id}</b> (${TYPES[a.type][0]}, ${dmy(a.date)}, ${esc(locShort(a.loc))}) will be removed and its units returned to stock:</p><ul><li>${a.sku}: <span class="pos">+${plural(-a.qty,'unit')}</span></li></ul>`,
+    run:() => {
+      P(a.sku).stock[a.loc] -= a.qty; flashSku = [a.loc + a.sku];
+      adjs = adjs.filter(x => x !== a); render();
+      toast(`${a.id} deleted. Stock: ${a.sku} +${-a.qty}`);
+    }});
+}
+
+// ---------- Physical count (one location at a time) ----------
+function buildCount(){
+  const l = $('cLoc').value;
+  $('cb').innerHTML = l ? products.map(p => `<tr data-sku="${p.sku}" data-sys="${p.stock[l]}"><td>${p.sku}</td><td><b>${esc(p.name)}</b><span class="sub">${esc(p.grade)} · ${p.pack} L</span></td>
+    <td class="n">${p.stock[l]}</td><td class="n"><input class="ci" type="number" min="0" step="1" aria-label="Physical count for ${p.sku}"></td>
+    <td class="n vc">—</td><td><input class="ri" maxlength="120" aria-label="Remark for ${p.sku}"></td></tr>`).join('')
+    : `<tr><td colspan="6" class="empty">Select the location you are counting.</td></tr>`;
+  updCount();
+}
+function openCount(){
+  $('cDate').value = today(); $('cDate').max = today(); $('cErr').innerHTML = ''; clearBad($('pc'));
+  setupLocField($('cLoc'), $('cLocL'), '', false);
+  buildCount();
+  $('pc').hidden = false; $('cntBtn').disabled = true;
+  const first = $('cb').querySelector('.ci'); (first || $('cLoc')).focus();
+}
+function closeCount(){$('pc').hidden = true; $('cntBtn').disabled = false}
+function updCount(){
+  let n = 0, nv = 0, net = 0, val = 0;
+  $('cb').querySelectorAll('tr[data-sku]').forEach(r => {
+    const v = r.querySelector('.ci').value, ri = r.querySelector('.ri'), vc = r.querySelector('.vc');
+    r.classList.remove('var');
+    if(v === '' || !isWhole(v)){vc.textContent = v === '' ? '—' : '?'; ri.placeholder = 'Only needed if there is a variance'; return}
+    const d = +v - +r.dataset.sys; n++;
+    if(d){nv++; net += d; val += d * P(r.dataset.sku).cost; r.classList.add('var')}
+    vc.innerHTML = d ? `<span class="${signCls(d)}">${sign(d)}</span>` : '<span class="badge in">Match</span>';
+    ri.placeholder = d ? 'Required: explain the difference' : 'Optional';
+  });
+  $('cSum').innerHTML = `Counted <b>${n}</b> of ${products.length} products · <b>${nv}</b> with variance · Net <b class="${signCls(net)}">${sign(net)} units</b> (RM ${signMoney(val)} at cost)`;
+}
+function confirmCount(){
+  clearBad($('pc'));
+  const errs = [], bad = el => el.classList.add('bad'), date = $('cDate').value, loc = $('cLoc').value, counted = [];
+  if(!loc){errs.push('Select the location you are counting.'); bad($('cLoc'))}
+  if(!date){errs.push('Choose the count date.'); bad($('cDate'))}
+  else if(date > today()){errs.push('The count date cannot be in the future.'); bad($('cDate'))}
+  $('cb').querySelectorAll('tr[data-sku]').forEach(r => {
+    const ci = r.querySelector('.ci'), ri = r.querySelector('.ri'), sku = r.dataset.sku;
+    if(ci.value === '') return;
+    if(!isWhole(ci.value)){errs.push(`Physical count for ${sku} must be a whole number of 0 or more.`); bad(ci); return}
+    if(P(sku).stock[loc] !== +r.dataset.sys){errs.push(`The stock of ${sku} changed after the count started. Cancel and start the count again.`); bad(ci); return}
+    const d = +ci.value - +r.dataset.sys;
+    if(d && !ri.value.trim()){errs.push(`Explain the variance of ${sign(d)} for ${sku} in the remark.`); bad(ri); return}
+    counted.push({sku, count:+ci.value, d, note:ri.value.trim()});
+  });
+  if(loc && !counted.length && !errs.length) errs.push('Enter the physical count for at least one product.');
+  if(!showErr('cErr', errs)) return;
+  const changed = counted.filter(c => c.d);
+  changed.forEach(c => {
+    const id = 'ADJ-' + String(nextAdj++).padStart(3,'0');
+    adjs.push({id, date, loc, type:'count', sku:c.sku, qty:c.d, note:c.note});
+    P(c.sku).stock[loc] = c.count; flashRow.push(id); flashSku.push(loc + c.sku);
+  });
+  closeCount(); render();
+  toast(changed.length ? `Count at ${locShort(loc)} confirmed. ${plural(changed.length,'product')} adjusted: ` + changed.map(c => c.sku + ' ' + sign(c.d)).join(', ')
+    : `Count at ${locShort(loc)} confirmed. All ${plural(counted.length,'counted product')} match the system balance.`);
+}
+
+// ---------- Events ----------
+document.body.classList.toggle('staff', !LSMS.isAdmin);
+$('locBox').innerHTML = LSMS.isAdmin
+  ? `<label class="locsel">Location<select id="fl"><option value="">All locations</option>${LSMS.LOCATIONS.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('')}</select></label>`
+  : `<div class="locpill"><small>Your location</small><b>${esc(locName(LSMS.myLoc))}</b></div>`;
+if($('fl')) $('fl').onchange = render;
+$('fp').innerHTML = '<option value="">All products</option>' + products.map(p => `<option value="${p.sku}">${esc(label(p))}</option>`).join('');
+$('fFrom').max = $('fTo').max = today();
+$('tS').onclick = () => showTab('tS'); $('tA').onclick = () => showTab('tA');
+['q','fp','fFrom','fTo'].forEach(i => $(i).oninput = renderSales);
+['q2','ft'].forEach(i => $(i).oninput = renderAdj);
+$('addSale').onclick = () => openSale();
+$('addLn').onclick = () => addLine();
+$('sLoc').onchange = relines;
+$('fCancel').onclick = () => $('dSale').close();
+$('fSave').onclick = saveSale;
+$('vClose').onclick = () => $('dView').close();
+$('vPrint').onclick = () => LSMS.print('Invoice ' + viewId, invoiceHtml(sales.find(x => x.id === viewId)));
+$('kNo').onclick = () => $('dConf').close();
+$('kYes').onclick = () => {$('dConf').close(); onYes && onYes()};
+$('tb').onclick = e => {const b = e.target.closest('button'); if(!b) return; ({v:openView,e:openSale,d:openDelSale})[b.dataset.a](b.dataset.id)};
+$('lines').onclick = e => {if(e.target.classList.contains('x')){e.target.closest('.ln').remove(); sumForm()}};
+$('lines').oninput = e => {
+  if(e.target.classList.contains('ls')){const p = P(e.target.value); e.target.closest('.ln').querySelector('.lp').value = p ? p.price : ''}
+  sumForm();
+};
+$('addAdj').onclick = openAdj;
+$('aLoc').onchange = fillAdjProd;
+$('aCancel').onclick = () => $('dAdj').close();
+$('aSave').onclick = saveAdj;
+$('ab').onclick = e => {const b = e.target.closest('button'); if(b && !b.disabled) openDelAdj(b.dataset.id)};
+$('cntBtn').onclick = openCount;
+$('cLoc').onchange = buildCount;
+$('cCancel').onclick = closeCount;
+$('cOk').onclick = confirmCount;
+$('cb').oninput = updCount;
+render();
+</script>
+<script src="../sidebar.js"></script>
+</body>
+</html>

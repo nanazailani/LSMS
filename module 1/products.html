@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IPTB-LSMS · Lubricant Product Management</title>
+<script src="../lsms.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#ffffff;--head:#f3f5f6;--surface:#fff;--ink:#16212b;--muted:#5b6875;--line:#d9e0e5;--accent:#d3171e;--accent-ink:#fff;--yellow:#ffe500;--ok:#1d6b3f;--okbg:#e3f2e9;--low:#8a5a00;--lowbg:#fdf0d3;--out:#a3231b;--outbg:#fbe4e2;--focus:#d3171e}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+.top{background:var(--surface);position:relative;border-bottom:4px solid var(--accent)}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:4px;background:var(--yellow)}
+.top .in{padding:10px 28px;display:flex;align-items:center;gap:14px}
+.plate{display:flex}
+.plate img{height:56px;width:auto;display:block}
+.top strong{display:block;font-size:17px;line-height:1.3}
+.top span{color:var(--muted);font-size:13.5px}
+.wrap{max-width:1360px;margin:0 auto;padding:32px 16px 48px}
+h1{font-size:1.5rem;line-height:1.2;margin:0 0 4px;font-weight:600}
+.sub{margin:0 0 20px;color:var(--muted)}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--yellow);border-radius:6px;padding:10px 14px;min-width:130px}
+.stat b{display:block;font-size:1.4rem;font-weight:600}
+.stat span{color:var(--muted);font-size:.85rem}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+input,select,button{font:inherit;color:inherit}
+input,select{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-height:40px}
+.bar input[type=search]{flex:1 1 220px}
+button{cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--surface);padding:8px 14px;min-height:40px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:500}
+button.danger{background:var(--out);color:var(--surface);border-color:var(--out)}
+button.link{border:0;background:none;color:var(--ink);text-decoration:underline;padding:6px 8px;min-height:32px}
+button.link.del{color:var(--out)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;min-width:980px}
+th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;font-size:.85rem;color:var(--muted);background:var(--head)}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.name{white-space:normal;min-width:170px}
+td.name small{display:block;color:var(--muted)}
+.chip{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.8rem;font-weight:500}
+.chip.ok{background:var(--okbg);color:var(--ok)}.chip.low{background:var(--lowbg);color:var(--low)}.chip.out{background:var(--outbg);color:var(--out)}
+/* Stock cell: number centred above the status chip */
+td.stk,th.stk{text-align:center}
+td.stk .cell{display:inline-flex;flex-direction:column;align-items:center;gap:3px}
+td.stk b{font-size:1.05rem;line-height:1.2;font-variant-numeric:tabular-nums}
+.thumb{width:44px;height:56px;object-fit:contain;border-radius:6px;border:1px solid var(--line);background:#fff;display:block}
+.zoom{padding:0;border:0;background:none;min-height:0;cursor:zoom-in;border-radius:6px;display:block}
+#imgDlg .dlg{text-align:center}
+#bigImg{display:block;margin:0 auto;width:100%;max-width:380px;height:min(60vh,440px);object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:6px}
+#imgDlg .actions{justify-content:center}
+.ico{width:36px;height:36px;min-height:0;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:1rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;margin-right:6px}
+.ico.del{border-color:var(--out);background:var(--outbg)}
+.empty{padding:32px 16px;text-align:center;color:var(--muted)}
+.count{color:var(--muted);font-size:.85rem;margin:8px 2px 0}
+dialog{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0;width:min(520px,calc(100% - 24px))}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg{padding:20px}
+.dlg h2{margin:0 0 14px;font-size:1.15rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid .full{grid-column:1/-1}
+label{display:block;font-size:.85rem;font-weight:500}
+label input,label select{width:100%;margin-top:4px;font-weight:400}
+.err{color:var(--out);font-size:.8rem;min-height:1.1em;margin-top:2px;font-weight:400}
+.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%}
+#toast.show{opacity:1}
+@media (max-width:860px){.top .in{padding:10px 16px;gap:12px}.plate img{height:42px}}
+@media (max-width:520px){.grid{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><div class="plate"><img alt="BURAQOIL logo" src="../images/buraqoil-logo.png"></div><div><strong>Lubricant Stock Management System</strong><span>IPTB Sdn Bhd</span></div></div></header>
+<div class="wrap">
+  <h1>Lubricant products</h1>
+  <p class="sub">Master list of lubricant SKUs for IPTB Sdn Bhd. Stock quantities change only through deliveries, sales and stock adjustments.</p>
+  <p class="sub" id="locNote" hidden></p>
+
+  <div class="stats" aria-label="Summary">
+    <div class="stat"><b id="sTotal">0</b><span>Products</span></div>
+    <div class="stat"><b id="sLow">0</b><span>Low stock</span></div>
+    <div class="stat"><b id="sOut">0</b><span>Out of stock</span></div>
+  </div>
+
+  <div class="bar">
+    <input type="search" id="q" placeholder="Search brand, product or grade" aria-label="Search products">
+    <select id="fLoc" aria-label="Filter by location"></select>
+    <select id="fBrand" aria-label="Filter by brand"></select>
+    <select id="fType" aria-label="Filter by type"></select>
+    <select id="fStatus" aria-label="Filter by stock status">
+      <option value="">All stock status</option><option value="ok">In stock</option><option value="low">Low stock</option><option value="out">Out of stock</option>
+    </select>
+    <button class="primary" id="addBtn">Add product</button>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead id="head"></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden>No products match your search. Clear the filters or add a new product.</div>
+  </div>
+  <p class="count" id="count" aria-live="polite"></p>
+</div>
+
+<dialog id="formDlg">
+  <form class="dlg" id="form" novalidate>
+    <h2 id="formTitle">Add product</h2>
+    <div class="grid">
+      <label>Brand<input name="brand" autocomplete="off"><div class="err" data-for="brand"></div></label>
+      <label>Product name<input name="name" autocomplete="off"><div class="err" data-for="name"></div></label>
+      <label>Viscosity grade<input name="grade" placeholder="e.g. 10W-40" autocomplete="off"><div class="err" data-for="grade"></div></label>
+      <label>Type<select name="type"></select><div class="err" data-for="type"></div></label>
+      <label>Pack size<select name="pack"></select><div class="err" data-for="pack"></div></label>
+      <label>Minimum stock (packs)<input name="min" type="number" min="0" step="1" inputmode="numeric"><div class="err" data-for="min"></div></label>
+      <label>Cost price (RM)<input name="cost" type="number" min="0" step="0.01" inputmode="decimal"><div class="err" data-for="cost"></div></label>
+      <label>Selling price (RM)<input name="price" type="number" min="0" step="0.01" inputmode="decimal"><div class="err" data-for="price"></div></label>
+    <label class="full">Product image (optional)<input name="img" type="file" accept="image/*"><div class="err" data-for="img"></div></label>
+    </div>
+    <div class="actions"><button type="button" id="cancelForm">Cancel</button><button class="primary" type="submit" id="saveBtn">Save product</button></div>
+  </form>
+</dialog>
+
+<dialog id="delDlg">
+  <div class="dlg">
+    <h2>Delete this product?</h2>
+    <p id="delText"></p>
+    <div class="actions"><button id="cancelDel">Keep product</button><button class="danger" id="confirmDel">Delete product</button></div>
+  </div>
+</dialog>
+<dialog id="imgDlg" aria-labelledby="imgTitle">
+  <div class="dlg">
+    <h2 id="imgTitle"></h2>
+    <img id="bigImg" alt="">
+    <div class="actions"><button id="closeImg">Close</button></div>
+  </div>
+</dialog>
+<div id="toast" role="status"></div>
+
+<script>
+var TYPES=['Engine oil','Gear oil','Motorcycle oil','Grease','Other'];
+var PACKS=[0.5,0.8,1,4,18,208];
+var products=[
+ {id:1,brand:'Grantt',name:'Stellar 1000',grade:'10W-40',type:'Engine oil',pack:4,cost:78,price:98,min:10,stock:{PHG:24,KTN:12}},
+ {id:2,brand:'Grantt',name:'Stellar 1000',grade:'15W-50',type:'Engine oil',pack:4,cost:80,price:100,min:8,stock:{PHG:3,KTN:6}},
+ {id:3,brand:'Grantt',name:'Stellar 1000',grade:'10W-30',type:'Engine oil',pack:4,cost:78,price:98,min:8,stock:{PHG:15,KTN:4}},
+ {id:4,brand:'Grantt',name:'Stellar 1000',grade:'20W-50',type:'Engine oil',pack:4,cost:80,price:100,min:8,stock:{PHG:0,KTN:9}},
+ {id:5,brand:'BuraqLube',name:'Mineral Jaso FB 2T',grade:'2T',type:'Motorcycle oil',pack:0.5,cost:4.5,price:6.5,min:30,stock:{PHG:48,KTN:20}},
+ {id:6,brand:'BuraqLube',name:'API SL/CF',grade:'20W-50',type:'Engine oil',pack:1,cost:22,price:30,min:12,stock:{PHG:12,KTN:8}},
+ {id:7,brand:'BuraqLube',name:'Mineral SAE 4T',grade:'4T',type:'Motorcycle oil',pack:0.5,cost:8,price:11,min:24,stock:{PHG:60,KTN:30}},
+ {id:8,brand:'Pennzoil',name:'Gearplus',grade:'SAE 90 EP',type:'Gear oil',pack:4,cost:105,price:135,min:6,stock:{PHG:14,KTN:3}},
+ {id:9,brand:'Pennzoil',name:'Gearplus',grade:'SAE 140 EP',type:'Gear oil',pack:4,cost:110,price:140,min:6,stock:{PHG:5,KTN:7}},
+ {id:10,brand:'Repsol',name:'MXR PLUS 4T',grade:'10W-40',type:'Motorcycle oil',pack:1,cost:34,price:46,min:12,stock:{PHG:30,KTN:15}}
+];
+var nextId=11, editingId=null, deleteId=null;
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+// Stock is kept per station (PHG = Kuantan, KTN = Kota Bharu, see ../lsms.js); the product list itself is shared.
+var LOCS=LSMS.locs().map(function(l){return l.id});   // stations this user may see
+function scope(){var v=$('fLoc')?$('fLoc').value:'';return v?[v]:LOCS}
+function totalStock(p){return LOCS.reduce(function(a,l){return a+p.stock[l]},0)}
+function status(p,l){var n=p.stock[l];return n<=0?'out':(n<=p.min?'low':'ok')}
+var LABEL={ok:'In stock',low:'Low stock',out:'Out of stock'};
+var PAL=['#d3171e','#0e5a78','#1d6b3f','#b7791f','#5b3d9a','#16212b'];
+function bottle(p){
+  var h=0;for(var i=0;i<p.brand.length;i++)h+=p.brand.charCodeAt(i);
+  var g=esc(p.grade.replace(/^SAE /,'').slice(0,7));
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 80"><rect x="22" y="3" width="16" height="11" rx="2" fill="#333"/><path d="M20 14h20l8 12v46a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6V26z" fill="'+PAL[h%PAL.length]+'"/><rect x="16" y="36" width="28" height="26" rx="3" fill="#fff"/><text x="30" y="52" font-size="7" font-weight="700" text-anchor="middle" fill="#16212b" font-family="Arial,sans-serif">'+g+'</text></svg>';
+  return 'data:image/svg+xml;utf8,'+encodeURIComponent(svg);
+}
+function thumb(p){return p.img||'images/'+sku(p)+'.jpg'}
+function imgErr(el,id){
+  var p=products.find(function(x){return x.id===id});
+  if(p&&!p.img&&!el.dataset.t){el.dataset.t=1;el.src='images/'+sku(p)+'.png';return}
+  el.onerror=null;if(p)el.src=bottle(p);
+}
+function shrink(file,ok,bad){
+  var r=new FileReader();
+  r.onerror=bad;
+  r.onload=function(){var im=new Image();im.onerror=bad;im.onload=function(){
+    var k=Math.min(1,600/Math.max(im.width,im.height)),c=document.createElement('canvas');
+    c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+    var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
+    ok(c.toDataURL('image/jpeg',0.85))};im.src=r.result};
+  r.readAsDataURL(file);
+}
+function packLabel(n){return n+' L'}
+function sku(p){return 'LUB-'+String(p.id).padStart(3,'0')}
+function toast(msg){var t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(function(){t.classList.remove('show')},2600)}
+
+function fillFilters(){
+  var brands=[...new Set(products.map(function(p){return p.brand}))].sort();
+  var cur=$('fBrand').value;
+  $('fBrand').innerHTML='<option value="">All brands</option>'+brands.map(function(b){return '<option>'+esc(b)+'</option>'}).join('');
+  $('fBrand').value=brands.indexOf(cur)>-1?cur:'';
+  if(!$('fType').options.length)$('fType').innerHTML='<option value="">All types</option>'+TYPES.map(function(t){return '<option>'+t+'</option>'}).join('');
+}
+function render(){
+  fillFilters();
+  var q=$('q').value.trim().toLowerCase(),b=$('fBrand').value,t=$('fType').value,s=$('fStatus').value,locs=scope();
+  var any=function(p,st){return locs.some(function(l){return status(p,l)===st})};
+  var list=products.filter(function(p){
+    var hay=(p.brand+' '+p.name+' '+p.grade).toLowerCase();
+    return (!q||hay.indexOf(q)>-1)&&(!b||p.brand===b)&&(!t||p.type===t)&&(!s||any(p,s));
+  });
+  // one location: stock and status columns; all locations: one stock column per location
+  var many=locs.length>1;
+  $('head').innerHTML='<tr><th>Image</th><th>SKU</th><th>Product</th><th>Type</th><th class="num">Pack</th><th class="num">Cost (RM)</th><th class="num">Price (RM)</th><th class="num">Min stock</th>'+
+    (many?locs.map(function(l){return '<th class="stk">Stock: '+esc(LSMS.locShort(l))+'</th>'}).join(''):'<th class="num">Current stock</th><th>Status</th>')+'<th>Actions</th></tr>';
+  var stockCells=function(p){
+    if(!many){var st=status(p,locs[0]);return '<td class="num">'+p.stock[locs[0]]+'</td><td><span class="chip '+st+'">'+LABEL[st]+'</span></td>'}
+    // number centred above the status chip
+    return locs.map(function(l){var st=status(p,l);return '<td class="stk"><div class="cell"><b>'+p.stock[l]+'</b><span class="chip '+st+'">'+LABEL[st]+'</span></div></td>'}).join('');
+  };
+  $('rows').innerHTML=list.map(function(p){return '<tr>'+
+    '<td><button class="zoom" data-zoom="'+p.id+'" title="View larger image" aria-label="View larger image of '+esc(p.brand+' '+p.name+' '+p.grade)+'"><img class="thumb" src="'+thumb(p)+'" alt="" onerror="imgErr(this,'+p.id+')"></button></td><td>'+sku(p)+'</td>'+
+    '<td class="name"><strong>'+esc(p.brand)+' '+esc(p.name)+'</strong><small>'+esc(p.grade)+'</small></td>'+
+    '<td>'+esc(p.type)+'</td><td class="num">'+packLabel(p.pack)+'</td>'+
+    '<td class="num">'+p.cost.toFixed(2)+'</td><td class="num">'+p.price.toFixed(2)+'</td>'+
+    '<td class="num">'+p.min+'</td>'+
+    stockCells(p)+
+    '<td><button class="ico" data-edit="'+p.id+'" title="Edit" aria-label="Edit '+esc(p.brand+' '+p.name+' '+p.grade)+'">&#9999;&#65039;</button><button class="ico del" data-del="'+p.id+'" title="Delete" aria-label="Delete '+esc(p.brand+' '+p.name+' '+p.grade)+'">&#128465;&#65039;</button></td></tr>'}).join('');
+  $('empty').hidden=list.length>0;
+  $('count').textContent='Showing '+list.length+' of '+products.length+' products';
+  $('sTotal').textContent=products.length;
+  $('sLow').textContent=products.filter(function(p){return any(p,'low')}).length;
+  $('sOut').textContent=products.filter(function(p){return any(p,'out')}).length;
+}
+
+var F=$('form');
+F.type.innerHTML=TYPES.map(function(t){return '<option>'+t+'</option>'}).join('');
+F.pack.innerHTML=PACKS.map(function(n){return '<option value="'+n+'">'+packLabel(n)+'</option>'}).join('');
+function clearErrors(){document.querySelectorAll('.err').forEach(function(e){e.textContent=''})}
+function setErr(k,m){F.querySelector('[data-for="'+k+'"]').textContent=m}
+function openForm(p){
+  editingId=p?p.id:null;clearErrors();
+  $('formTitle').textContent=p?'Edit product':'Add product';
+  F.brand.value=p?p.brand:'';F.name.value=p?p.name:'';F.grade.value=p?p.grade:'';
+  F.type.value=p?p.type:TYPES[0];F.pack.value=p?p.pack:1;
+  F.img.value='';F.min.value=p?p.min:'';F.cost.value=p?p.cost:'';F.price.value=p?p.price:'';
+  $('formDlg').showModal();F.brand.focus();
+}
+function validate(){
+  clearErrors();var ok=true,v={};
+  v.brand=F.brand.value.trim();v.name=F.name.value.trim();v.grade=F.grade.value.trim();
+  v.type=F.type.value;v.pack=parseFloat(F.pack.value);
+  if(!v.brand){setErr('brand','Enter the brand.');ok=false}
+  if(!v.name){setErr('name','Enter the product name.');ok=false}
+  if(!v.grade){setErr('grade','Enter the viscosity grade or type.');ok=false}
+  var min=F.min.value.trim(),cost=F.cost.value.trim(),price=F.price.value.trim();
+  if(min===''||!/^\d+$/.test(min)){setErr('min','Enter a whole number of 0 or more.');ok=false}else v.min=parseInt(min,10);
+  if(cost===''||isNaN(cost)||+cost<0){setErr('cost','Enter a cost price of 0 or more.');ok=false}else v.cost=Math.round(+cost*100)/100;
+  if(price===''||isNaN(price)||+price<0){setErr('price','Enter a selling price of 0 or more.');ok=false}else v.price=Math.round(+price*100)/100;
+  if(ok&&v.price<v.cost){setErr('price','Selling price cannot be lower than cost price.');ok=false}
+  if(ok){
+    var dup=products.some(function(p){return p.id!==editingId&&p.brand.toLowerCase()===v.brand.toLowerCase()&&p.name.toLowerCase()===v.name.toLowerCase()&&p.grade.toLowerCase()===v.grade.toLowerCase()&&p.pack===v.pack});
+    if(dup){setErr('name','This product with the same grade and pack size already exists.');ok=false}
+  }
+  return ok?v:null;
+}
+F.addEventListener('submit',function(e){
+  e.preventDefault();var v=validate();if(!v)return;
+  var done=function(img){
+    if(img)v.img=img;
+    if(editingId){var p=products.find(function(x){return x.id===editingId});Object.assign(p,v);toast('Product updated')}
+    else{v.id=nextId++;v.stock={};LSMS.LOCATIONS.forEach(function(l){v.stock[l.id]=0});products.push(v);toast('Product added')}
+    $('formDlg').close();render();
+  };
+  var f=F.img.files[0];
+  if(!f)return done(null);
+  if(!/^image\//.test(f.type)){setErr('img','Choose an image file.');return}
+  shrink(f,done,function(){setErr('img','This image could not be read. Try another file.')});
+});
+$('addBtn').onclick=function(){openForm(null)};
+$('cancelForm').onclick=function(){$('formDlg').close()};
+$('rows').addEventListener('click',function(e){
+  var zm=e.target.closest('[data-zoom]');
+  if(zm){var z=products.find(function(x){return x.id===+zm.dataset.zoom});
+    $('imgTitle').textContent=z.brand+' '+z.name+' '+z.grade+' ('+packLabel(z.pack)+')';
+    $('bigImg').src=zm.querySelector('img').src;$('bigImg').alt=z.brand+' '+z.name+' '+z.grade;$('imgDlg').showModal();return}
+  var ed=e.target.closest('[data-edit]'),de=e.target.closest('[data-del]');
+  if(ed)openForm(products.find(function(p){return p.id===+ed.dataset.edit}));
+  if(de){var p=products.find(function(x){return x.id===+de.dataset.del});deleteId=p.id;
+    $('delText').textContent='"'+p.brand+' '+p.name+' '+p.grade+' ('+packLabel(p.pack)+')" will be removed from the product list.'+(totalStock(p)>0?' It still has '+totalStock(p)+' in stock.':'');
+    $('delDlg').showModal()}
+});
+$('closeImg').onclick=function(){$('imgDlg').close()};
+$('imgDlg').addEventListener('click',function(e){if(e.target===this)this.close()});
+$('cancelDel').onclick=function(){$('delDlg').close()};
+$('confirmDel').onclick=function(){products=products.filter(function(p){return p.id!==deleteId});$('delDlg').close();render();toast('Product deleted')};
+if(LSMS.isAdmin){$('fLoc').innerHTML='<option value="">All locations</option>'+LSMS.LOCATIONS.map(function(l){return '<option value="'+l.id+'">'+esc(l.name)+'</option>'}).join('')}
+else{$('fLoc').remove();$('locNote').innerHTML='Stock shown for your location: <strong>'+esc(LSMS.locName(LSMS.myLoc))+'</strong>.';$('locNote').hidden=false}
+['q','fLoc','fBrand','fType','fStatus'].forEach(function(id){if($(id))$(id).addEventListener(id==='q'?'input':'change',render)});
+render();
+</script>
+<script src="../sidebar.js"></script>
+</body>
+</html>

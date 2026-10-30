@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IPTB-LSMS · Staff and Locations</title>
+<script src="../lsms.js"></script>
+<style>
+:root{--red:#d4161c;--red-d:#a80f14;--yel:#f5c400;--ink:#17202a;--mut:#5c6670;--line:#dfe3e8;--bg:#f6f7f9;--ok:#1d7a3e;--okb:#e1f4e7;--no:#b3261e;--nob:#fde4e2}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.45}
+header{padding:10px 0;border-bottom:5px solid var(--red);box-shadow:0 5px 0 var(--yel);margin-bottom:5px}
+.hin{padding:0 28px;display:flex;gap:14px;align-items:center}
+[hidden]{display:none!important}
+.logo-img{height:56px;width:auto;display:block}
+.logo{font-weight:900;font-size:24px;letter-spacing:.5px;color:var(--red);line-height:1}
+header h2{margin:0;font-size:17px;line-height:1.3}header p{margin:2px 0 0;color:var(--mut);font-size:13.5px}
+main{max-width:1360px;margin:0 auto;padding:30px clamp(16px,5vw,64px) 60px}
+h1{margin:0 0 6px;font-size:30px}h3{margin:40px 0 6px;font-size:21px}
+.lead{max-width:640px;color:var(--mut);margin:0 0 20px}
+.locs{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.loc{border:1px solid var(--line);border-left:4px solid var(--yel);border-radius:4px;padding:14px 16px}
+.loc b{display:block;font-size:16px}.loc p{margin:4px 0 8px;color:var(--mut);font-size:14px}
+.loc span{font-size:13px;font-weight:600}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--red);color:#fff;border:0;border-radius:4px;padding:10px 18px;font-weight:600}
+.btn:hover{background:var(--red-d)}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid #c7cdd4}.btn.sec:hover{background:var(--bg)}
+.lnk{background:none;border:0;padding:0;margin-right:12px;text-decoration:underline;color:var(--ink)}
+.lnk.d{color:var(--red)}
+.tw{border:1px solid var(--line);border-radius:4px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th{background:var(--bg);text-align:left;font-size:13px;color:var(--mut);padding:11px 14px;border-bottom:1px solid var(--line)}
+td{padding:13px 14px;border-bottom:1px solid var(--line);font-size:15px;vertical-align:top}
+tr:last-child td{border-bottom:0}
+.sub{display:block;color:var(--mut);font-size:13px}
+.empty{padding:34px;text-align:center;color:var(--mut)}
+dialog{border:0;border-radius:6px;padding:0;width:min(520px,94vw);box-shadow:0 10px 40px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(23,32,42,.5)}
+.dh{padding:18px 22px;border-bottom:1px solid var(--line)}.dh h4{margin:0;font-size:19px}
+.db{padding:18px 22px}
+.df{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600;margin-bottom:12px}
+label small{font-weight:400;color:var(--mut)}
+input,select{font:inherit;padding:9px 10px;border:1px solid #c7cdd4;border-radius:4px;background:#fff;color:var(--ink)}
+.bad{border-color:var(--no);background:var(--nob)}
+.err{color:var(--no);font-size:14px;min-height:20px;font-weight:600}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:6px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:92vw;text-align:center}
+#toast.on{opacity:1}
+:focus-visible{outline:3px solid #1a5fd0;outline-offset:2px}
+@media(max-width:860px){.hin{padding:0 16px;gap:12px}.logo-img{height:42px}}
+@media(max-width:620px){main{padding:22px 14px}}
+</style>
+</head>
+<body>
+<header>
+<div class="hin">
+  <img class="logo-img" src="../images/buraqoil-logo.png" alt="Buraqoil" onerror="this.hidden=true;document.getElementById('lt').hidden=false">
+  <div class="logo" id="lt" hidden>BURAQOIL</div>
+  <div><h2>Lubricant Stock Management System</h2><p>IPTB Sdn Bhd, Admin: Staff and Locations</p></div>
+</div>
+</header>
+
+<main>
+  <h1>Staff and locations</h1>
+  <p class="lead">Add staff accounts and assign each one to a station. Staff log in with their email and the password you set here.</p>
+
+  <div class="locs" id="locs"></div>
+
+  <h3>Staff accounts</h3>
+  <div class="bar">
+    <span class="sub" id="cnt"></span>
+    <button class="btn" id="add" type="button">+ Add staff</button>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Staff</th><th>Email</th><th>Location</th><th>Actions</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <form method="dialog" id="fm" novalidate>
+    <div class="dh"><h4 id="dt">Add staff</h4></div>
+    <div class="db">
+      <label>Full name<input id="fn" autocomplete="off"></label>
+      <label>Email<input id="fe" type="email" autocomplete="off"></label>
+      <label>Password <small id="ph">At least 6 characters. Give this to the staff member.</small><input id="fp" type="text" autocomplete="off"></label>
+      <label>Location<select id="fl"></select></label>
+      <div class="err" id="fErr" role="alert"></div>
+    </div>
+    <div class="df">
+      <button class="btn sec" type="button" id="cx">Cancel</button>
+      <button class="btn" type="submit" id="ok">Save staff</button>
+    </div>
+  </form>
+</dialog>
+<div id="toast" role="status"></div>
+
+<script>
+// Front-end demo only: staff are kept in this browser's localStorage. Real accounts need a server.
+const LOCATIONS = LSMS.LOCATIONS;
+const STAFF_KEY = 'lsms_staff';
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const L = id => LOCATIONS.find(l => l.id === id);
+
+let role = '';
+try { role = sessionStorage.getItem('lsms_role') || ''; } catch (e) {}
+if (role !== 'admin') location.replace('../login.html');
+
+let staff = [];
+try { staff = JSON.parse(localStorage.getItem(STAFF_KEY)) || []; } catch (e) {}
+const save = () => { try { localStorage.setItem(STAFF_KEY, JSON.stringify(staff)); return true } catch (e) { return false } };
+
+let editEmail = null, tt;
+function toast(m){$('toast').textContent = m; $('toast').classList.add('on'); clearTimeout(tt); tt = setTimeout(() => $('toast').classList.remove('on'), 2600)}
+
+function render(){
+  $('locs').innerHTML = LOCATIONS.map(l => {
+    const n = staff.filter(s => s.loc === l.id).length;
+    return `<div class="loc"><b>${esc(l.name)}</b><p>${esc(l.addr)}</p><span>${n} staff assigned</span></div>`;
+  }).join('');
+  $('cnt').textContent = `${staff.length} staff account${staff.length === 1 ? '' : 's'}`;
+  $('tb').innerHTML = staff.length
+    ? staff.map(s => `<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.email)}</td><td>${esc(L(s.loc) ? L(s.loc).name : 'Not assigned')}<span class="sub">${esc(L(s.loc) ? L(s.loc).addr : '')}</span></td>
+        <td><button class="lnk" data-e="${esc(s.email)}" data-a="edit">Edit</button><button class="lnk d" data-e="${esc(s.email)}" data-a="del">Remove</button></td></tr>`).join('')
+    : `<tr><td colspan="4" class="empty">No staff yet. Select "Add staff" to create the first account.</td></tr>`;
+}
+
+function openForm(s){
+  editEmail = s ? s.email : null;
+  $('dt').textContent = s ? 'Edit staff' : 'Add staff';
+  $('fl').innerHTML = '<option value="">Select a location</option>' + LOCATIONS.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+  $('fn').value = s ? s.name : ''; $('fe').value = s ? s.email : ''; $('fp').value = ''; $('fl').value = s ? s.loc : '';
+  $('ph').textContent = s ? 'Leave blank to keep the current password.' : 'At least 6 characters. Give this to the staff member.';
+  $('fErr').textContent = '';
+  document.querySelectorAll('.bad').forEach(x => x.classList.remove('bad'));
+  $('dlg').showModal(); $('fn').focus();
+}
+
+$('fm').onsubmit = e => {
+  e.preventDefault();
+  document.querySelectorAll('.bad').forEach(x => x.classList.remove('bad'));
+  const name = $('fn').value.trim(), email = $('fe').value.trim().toLowerCase(), pass = $('fp').value, loc = $('fl').value;
+  const errs = [], bad = el => el.classList.add('bad');
+  if (!name){errs.push('Enter the full name.'); bad($('fn'))}
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){errs.push('Enter a valid email address.'); bad($('fe'))}
+  else if (email !== editEmail && staff.some(s => s.email === email)){errs.push('This email already has an account.'); bad($('fe'))}
+  if (editEmail ? pass && pass.length < 6 : pass.length < 6){errs.push('Password must be at least 6 characters.'); bad($('fp'))}
+  if (!loc){errs.push('Select the location.'); bad($('fl'))}
+  if (errs.length){$('fErr').textContent = errs.join(' '); return}
+  if (editEmail){
+    const s = staff.find(x => x.email === editEmail);
+    Object.assign(s, {name, email, loc}); if (pass) s.pass = pass;
+  } else staff.push({name, email, pass, loc});
+  if (!save()){$('fErr').textContent = 'Your browser blocked storage, so the staff list cannot be saved.'; return}
+  $('dlg').close(); render();
+  toast(`${name} ${editEmail ? 'updated' : 'added'} at ${L(loc).name}.`);
+};
+$('add').onclick = () => openForm(null);
+$('cx').onclick = () => $('dlg').close();
+$('tb').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const s = staff.find(x => x.email === b.dataset.e);
+  if (b.dataset.a === 'edit') return openForm(s);
+  if (confirm(`Remove ${s.name} (${s.email})? They will no longer be able to log in.`)){
+    staff = staff.filter(x => x !== s); save(); render(); toast(`${s.name} removed.`);
+  }
+};
+render();
+</script>
+<script src="../sidebar.js"></script>
+</body>
+</html>
