@@ -4,7 +4,7 @@
    (function () {
     var MODULES = [
       { n: 1, name: 'Product Management',  path: 'module 1/products.php' },
-      { n: 2, name: 'Stock Receiving',     path: 'module_2/stock-receiving.html' },
+      { n: 2, name: 'Stock Receiving',     path: 'module_2/stock-receiving.php' },
       { n: 3, name: 'Sales & Adjustment',  path: 'module_3/sales-adjustment.html' },
       { n: 4, name: 'Reports & Alerts',   path: 'module_4/index.html', sub: [
         { name: 'Overview', path: 'module_4/index.html' },

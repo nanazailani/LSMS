@@ -1,5 +1,5 @@
 <?php
-// Shared helpers for Module 1 (Lubricant Product Management).
+// Shared helpers for Module 1 (Lubricant Product Management), the admin page and Module 2 (Stock Receiving).
 
 const PRODUCT_TYPES   = ['Engine oil', 'Gear oil', 'Motorcycle oil', 'Grease', 'Other'];
 const PACK_SIZES      = [0.5, 0.8, 1.0, 4.0, 18.0, 208.0];   // litres per pack
@@ -245,4 +245,238 @@ function validate_staff(PDO $pdo, array $in, ?int $editingId): array
     }
 
     return [$err, $v];
+}
+
+
+// ---------------------------------------------------------------------
+// Module 2: Stock receiving (purchase orders and supplier deliveries)
+// ---------------------------------------------------------------------
+const INVOICE_MAX  = 30;
+const ORDER_STATUS = ['ordered' => 'Ordered', 'received' => 'Received', 'cancelled' => 'Cancelled'];
+
+/** True for a real calendar date written as YYYY-MM-DD. */
+function valid_date(string $s): bool
+{
+    return preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $s, $m) === 1 && checkdate((int)$m[2], (int)$m[3], (int)$m[1]);
+}
+
+/** DEL-001, PO-001 */
+function doc_code(string $prefix, int $id): string
+{
+    return $prefix . '-' . str_pad((string)$id, 3, '0', STR_PAD_LEFT);
+}
+
+/**
+ * Check a date field: required, a real date, not after today and (optional) not before $notBefore.
+ * Returns the error message, or null.
+ */
+function check_date(string $s, string $what, string $today, ?string $notBefore = null, string $notBeforeText = ''): ?string
+{
+    if ($s === '') {
+        return 'Choose the ' . $what . '.';
+    }
+    if (!valid_date($s)) {
+        return 'Enter a valid ' . $what . '.';
+    }
+    if ($s > $today) {
+        return ucfirst($what) . ' cannot be in the future.';
+    }
+    if ($notBefore !== null && $s < $notBefore) {
+        return ucfirst($what) . ' cannot be before ' . $notBeforeText . '.';
+    }
+    return null;
+}
+
+/** Supplier invoice number: required, 30 characters or less and not recorded on another delivery. */
+function check_invoice(PDO $pdo, string $inv, ?int $editingId): ?string
+{
+    if ($inv === '') {
+        return 'Enter the supplier invoice number.';
+    }
+    if (text_len($inv) > INVOICE_MAX) {
+        return 'The invoice number must be ' . INVOICE_MAX . ' characters or less.';
+    }
+    // the column collation ignores case, so INV-1 and inv-1 count as the same invoice
+    $st = $pdo->prepare('SELECT delivery_id FROM deliveries WHERE invoice_no = ? AND delivery_id <> ?');
+    $st->execute([$inv, $editingId ?? 0]);
+    $hit = $st->fetchColumn();
+    if ($hit !== false) {
+        return 'Invoice ' . $inv . ' is already recorded on ' . doc_code('DEL', (int)$hit) . '. Check for a duplicate delivery.';
+    }
+    return null;
+}
+
+/** An active supplier id, or null. */
+function check_supplier(PDO $pdo, $raw): ?int
+{
+    $raw = trim((string)$raw);
+    if (!preg_match('/^\d{1,9}$/', $raw)) {
+        return null;
+    }
+    $st = $pdo->prepare('SELECT COUNT(*) FROM suppliers WHERE supplier_id = ? AND is_active = 1');
+    $st->execute([(int)$raw]);
+    return (int)$st->fetchColumn() > 0 ? (int)$raw : null;
+}
+
+/** The location a new order or delivery goes to: staff always get their own; admin must pick one. */
+function check_location($raw, array $allowedLocs): ?int
+{
+    $loc = count($allowedLocs) === 1 ? (string)$allowedLocs[0] : trim((string)$raw);
+    if (!preg_match('/^\d{1,9}$/', $loc) || !in_array((int)$loc, $allowedLocs, true)) {
+        return null;
+    }
+    return (int)$loc;
+}
+
+/**
+ * The product lines of an order or a delivery.
+ * At least one line, every line an active product, no product twice,
+ * quantity a whole number of at least 1, unit cost 0 or more with up to 2 decimals.
+ *
+ * @return array [?string $error, array $items (list of product_id, qty, cost)]
+ */
+function validate_lines(PDO $pdo, $rows): array
+{
+    if (!is_array($rows)) {
+        $rows = [];
+    }
+    $skus = [];
+    foreach ($pdo->query('SELECT product_id, sku FROM products WHERE is_active = 1') as $p) {
+        $skus[(int)$p['product_id']] = $p['sku'];
+    }
+
+    $items = [];
+    $seen  = [];
+    foreach ($rows as $r) {
+        if (!is_array($r)) {
+            continue;
+        }
+        $pid  = trim((string)($r['product_id'] ?? ''));
+        $qty  = trim((string)($r['qty'] ?? ''));
+        $cost = trim((string)($r['cost'] ?? ''));
+        if ($pid === '' && $qty === '' && $cost === '') {
+            continue;                                    // a completely blank line is ignored
+        }
+        if (!preg_match('/^\d{1,9}$/', $pid) || !isset($skus[(int)$pid])) {
+            return ['Select a product on every line, or remove the empty line.', []];
+        }
+        $pid = (int)$pid;
+        $sku = $skus[$pid];
+        if (isset($seen[$pid])) {
+            return [$sku . ' appears twice. Combine it into one line.', []];
+        }
+        if (!preg_match('/^\d{1,6}$/', $qty) || (int)$qty < 1) {
+            return ['Quantity for ' . $sku . ' must be a whole number of at least 1.', []];
+        }
+        if (!preg_match('/^\d{1,8}(\.\d{1,2})?$/', $cost)) {
+            return ['Enter the unit cost for ' . $sku . ' (RM 0 or more, up to 2 decimals).', []];
+        }
+        $seen[$pid] = true;
+        $items[] = ['product_id' => $pid, 'qty' => (int)$qty, 'cost' => round((float)$cost, 2)];
+    }
+    if (!$items) {
+        return ['Add at least one product.', []];
+    }
+    return [null, $items];
+}
+
+/**
+ * Validate a new purchase order.
+ * $allowedLocs are the location ids this user may use (staff: only their own location).
+ *
+ * @return array [array $errors (field => message), array $clean values]
+ */
+function validate_order(PDO $pdo, array $in, array $allowedLocs, string $today): array
+{
+    $err = [];
+    $v   = [];
+
+    $v['supplier_id'] = check_supplier($pdo, $in['supplier_id'] ?? '');
+    if ($v['supplier_id'] === null) {
+        $err['supplier_id'] = 'Choose the supplier.';
+    }
+
+    $v['order_date'] = trim((string)($in['order_date'] ?? ''));
+    if (($m = check_date($v['order_date'], 'order date', $today)) !== null) {
+        $err['order_date'] = $m;
+    }
+
+    $v['location_id'] = check_location($in['location_id'] ?? '', $allowedLocs);
+    if ($v['location_id'] === null) {
+        $err['location_id'] = 'Select the location the stock will be delivered to.';
+    }
+
+    [$lineErr, $v['items']] = validate_lines($pdo, $in['items'] ?? []);
+    if ($lineErr !== null) {
+        $err['items'] = $lineErr;
+    }
+
+    return [$err, $v];
+}
+
+/**
+ * Validate a delivery. Used by BOTH Add and Edit so each rule is written once.
+ * On Edit the location is fixed (pass it as $fixedLoc): a delivery cannot move to another location.
+ *
+ * @return array [array $errors (field => message), array $clean values]
+ */
+function validate_delivery(PDO $pdo, array $in, ?int $editingId, array $allowedLocs, ?int $fixedLoc, string $today): array
+{
+    $err = [];
+    $v   = [];
+
+    $v['supplier_id'] = check_supplier($pdo, $in['supplier_id'] ?? '');
+    if ($v['supplier_id'] === null) {
+        $err['supplier_id'] = 'Choose the supplier.';
+    }
+
+    $v['invoice_no'] = trim((string)($in['invoice_no'] ?? ''));
+    if (($m = check_invoice($pdo, $v['invoice_no'], $editingId)) !== null) {
+        $err['invoice_no'] = $m;
+    }
+
+    $v['delivery_date'] = trim((string)($in['delivery_date'] ?? ''));
+    if (($m = check_date($v['delivery_date'], 'delivery date', $today)) !== null) {
+        $err['delivery_date'] = $m;
+    }
+
+    $v['location_id'] = $fixedLoc ?? check_location($in['location_id'] ?? '', $allowedLocs);
+    if ($v['location_id'] === null) {
+        $err['location_id'] = 'Select the location that received the stock.';
+    }
+
+    [$lineErr, $v['items']] = validate_lines($pdo, $in['items'] ?? []);
+    if ($lineErr !== null) {
+        $err['items'] = $lineErr;
+    }
+
+    return [$err, $v];
+}
+
+/**
+ * Stock check before a delivery is edited or cancelled: the units taken out must still be on the shelf.
+ * $delta is product_id => change in packs (negative = taken out). Locks the stock rows until commit.
+ * The database trigger blocks it too; this gives a message that names the product.
+ * Returns the error message, or null.
+ */
+function check_stock_drop(PDO $pdo, int $locationId, array $delta, string $verb): ?string
+{
+    $st = $pdo->prepare(
+        'SELECT p.sku, COALESCE(ls.current_stock, 0) AS current_stock
+           FROM products p
+           LEFT JOIN location_stock ls ON ls.product_id = p.product_id AND ls.location_id = ?
+          WHERE p.product_id = ? FOR UPDATE'
+    );
+    foreach ($delta as $pid => $d) {
+        if ($d >= 0) {
+            continue;
+        }
+        $st->execute([$locationId, $pid]);
+        $row = $st->fetch();
+        if ($row && (int)$row['current_stock'] + $d < 0) {
+            return 'Cannot ' . $verb . ': ' . $row['sku'] . ' has only ' . (int)$row['current_stock']
+                . ' in stock, so ' . -$d . ' cannot be taken out (some units were already sold).';
+        }
+    }
+    return null;
 }

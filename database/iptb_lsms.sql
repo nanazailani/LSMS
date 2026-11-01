@@ -8,7 +8,8 @@
 --
 -- Built from the LSMS repo (login.html, Modules 1-4):
 --   Module 1  Product Management    -> products
---   Module 2  Stock Receiving       -> suppliers, deliveries, delivery_items
+--   Module 2  Stock Receiving       -> suppliers, purchase_orders, purchase_order_items,
+--                                      deliveries, delivery_items
 --   Module 3  Sales and Adjustment  -> sales, sale_items, stock_adjustments
 --   Module 4  Reports and Alerts    -> alert_rules, product_alert_settings, reports + views
 --   Login     Users and locations   -> users, locations, staff_locations
@@ -156,6 +157,35 @@ CREATE TABLE delivery_items (
   CONSTRAINT chk_di_cost CHECK (unit_cost >= 0),
   CONSTRAINT fk_di_delivery FOREIGN KEY (delivery_id) REFERENCES deliveries(delivery_id) ON DELETE CASCADE,
   CONSTRAINT fk_di_product  FOREIGN KEY (product_id)  REFERENCES products(product_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE purchase_orders (                          -- shown as PO-001
+  po_id          INT AUTO_INCREMENT PRIMARY KEY,
+  location_id    INT NOT NULL,                          -- the station the stock is ordered for
+  supplier_id    INT NOT NULL,
+  order_date     DATE NOT NULL,                         -- not in the future (checked by the app)
+  status         ENUM('ordered','received','cancelled') NOT NULL DEFAULT 'ordered',
+  delivery_id    INT NULL UNIQUE,                       -- the delivery made when the order was received
+  created_by     INT NULL,
+  created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_po_location FOREIGN KEY (location_id) REFERENCES locations(location_id),
+  CONSTRAINT fk_po_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id),
+  CONSTRAINT fk_po_delivery FOREIGN KEY (delivery_id) REFERENCES deliveries(delivery_id) ON DELETE SET NULL,
+  CONSTRAINT fk_po_user     FOREIGN KEY (created_by)  REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE purchase_order_items (                     -- ordering does not change stock; receiving does
+  po_item_id     INT AUTO_INCREMENT PRIMARY KEY,
+  po_id          INT NOT NULL,
+  product_id     INT NOT NULL,
+  quantity       INT NOT NULL,                          -- packs ordered
+  unit_cost      DECIMAL(10,2) NOT NULL,                -- RM per pack
+  UNIQUE KEY uq_po_product (po_id, product_id),
+  CONSTRAINT chk_poi_qty  CHECK (quantity >= 1),
+  CONSTRAINT chk_poi_cost CHECK (unit_cost >= 0),
+  CONSTRAINT fk_poi_po      FOREIGN KEY (po_id)      REFERENCES purchase_orders(po_id) ON DELETE CASCADE,
+  CONSTRAINT fk_poi_product FOREIGN KEY (product_id) REFERENCES products(product_id)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
@@ -444,8 +474,10 @@ DELIMITER ;
 --   Stock    : the quantities in the list are the stock at Wilayah Pantai
 --              Timur (Kota Bharu, KTN), loaded as opening stock on
 --              22 Oct 2026. Cawangan Pahang (PHG) starts at 0.
---   No deliveries, sales or adjustments are seeded: record them through
---   Modules 2 and 3 so the stock changes are made by the triggers.
+--   Module 2 : the sample orders and deliveries from the Module 2 prototype
+--              (23-31 Oct 2026, after the opening stock). They are inserted
+--              below the triggers, so the deliveries add to stock like real ones.
+--   No sales or adjustments are seeded: record them through Module 3.
 -- ---------------------------------------------------------------------
 INSERT INTO users (user_id, full_name, email, password_hash, role) VALUES
 (1, 'Administrator',       'admin',                  '$2y$10$DgKEecNEDJ8Kg4EwTxsr2up67yNbi9nJYLyQ2mbp6HwdQrFIwsrfi', 'admin'),
@@ -513,6 +545,35 @@ INSERT INTO product_alert_settings (product_id) VALUES
 (8),
 (9),
 (10);
+
+-- Module 2 sample data: deliveries (trg_di_ai adds each line to location_stock) --------
+-- suppliers: 1 = Supplier A, 2 = Supplier B, 3 = Supplier C; unit cost = products.cost_price
+INSERT INTO deliveries (delivery_id, location_id, supplier_id, invoice_no, delivery_date, created_by) VALUES
+(1, 1, 1, 'INV-A-20931', '2026-10-23', 2),
+(2, 1, 2, 'INV-B-1187',  '2026-10-25', 2),
+(3, 1, 1, 'INV-A-21044', '2026-10-27', 2),
+(4, 1, 3, 'INV-C-0552',  '2026-10-29', 2),     -- received from PO-001
+(5, 2, 2, 'INV-B-1201',  '2026-10-24', 3),
+(6, 2, 3, 'INV-C-0561',  '2026-10-30', 3);
+
+INSERT INTO delivery_items (delivery_id, product_id, quantity, unit_cost) VALUES
+(1, 1, 24, 66.50), (1, 3, 15, 58.63),
+(2, 2, 6, 59.50),  (2, 5, 48, 4.55),
+(3, 4, 6, 54.25),
+(4, 8, 14, 53.38), (4, 10, 30, 14.00),
+(5, 1, 12, 66.50), (5, 7, 30, 4.76),
+(6, 5, 20, 4.55),  (6, 10, 15, 14.00);
+
+-- Module 2 sample data: purchase orders (ordering does not change stock) ---------------
+INSERT INTO purchase_orders (po_id, location_id, supplier_id, order_date, status, delivery_id, created_by) VALUES
+(1, 1, 3, '2026-10-26', 'received', 4,    2),
+(2, 1, 1, '2026-10-30', 'ordered',  NULL, 2),
+(3, 2, 2, '2026-10-31', 'ordered',  NULL, 3);
+
+INSERT INTO purchase_order_items (po_id, product_id, quantity, unit_cost) VALUES
+(1, 8, 14, 53.38), (1, 10, 30, 14.00),
+(2, 2, 10, 59.50), (2, 4, 12, 54.25),
+(3, 8, 6, 53.38),  (3, 9, 4, 55.13);
 
 -- ---------------------------------------------------------------------
 -- Views

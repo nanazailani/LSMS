@@ -8,8 +8,17 @@ BCS3263 Software Quality Assurance, Semester I 2026/2027.
   JPG/PNG image upload (2 MB limit). Validation is done on the server by one shared function
   (`includes/helpers.php`), queries use prepared statements, output is escaped, forms use a CSRF token.
   The stock quantity cannot be edited here (it changes only through deliveries, sales and adjustments).
-* Modules 2 to 4, the login page and the admin page are still the HTML prototypes of the other members.
-  The shared menu (`sidebar.js`) now opens `module 1/products.php`. The old prototype is kept as `module 1/products.html`.
+* **Module 2 (Stock Receiving) is PHP + MySQL**: `module_2/stock-receiving.php`
+  Order new stock from a supplier (purchase order, with a printable invoice), receive or cancel the order,
+  add a delivery without an order, view / edit / cancel deliveries, and print stock on hand.
+  Stock is changed only by the database triggers on `delivery_items`, never directly by the page.
+  Rules checked on the server (`includes/helpers.php`): supplier and at least one product required, no product twice,
+  whole-number quantity of 1 or more, unit cost of 0 or more, no duplicate supplier invoice number,
+  dates not in the future and delivery date not before the order date. A delivery cannot be edited or cancelled
+  if that would take stock below 0 (units already sold). Staff can only see and change their own location
+  (checked by PHP); admin sees every location. The old prototype is kept as `module_2/stock-receiving.html`.
+* Modules 3 and 4 are still the HTML prototypes of the other members.
+  The shared menu (`sidebar.js`) opens the PHP pages for Modules 1 and 2. The old prototype is kept as `module 1/products.html`.
 
 ## Run it with XAMPP
 1. Install XAMPP and start **Apache** and **MySQL**.
@@ -17,8 +26,7 @@ BCS3263 Software Quality Assurance, Semester I 2026/2027.
 3. Open `http://localhost/phpmyadmin` > **Import** > choose `database/iptb_lsms.sql` > **Go**.
    (It drops and recreates the database `iptb_lsms`.)
 4. Optional: import `database/optional_patch_stock_rows.sql` the same way.
-   The seed file has stock rows only for Pahang; the patch adds zero-stock rows for Kelantan.
-5. Open `http://localhost/LSMS/login.html` (demo logins are listed at the top of `database/iptb_lsms.sql`),
+   The seed file has stock rows only for Pahang; the patch adds zero-stock rows for Kelantan.5. Open `http://localhost/LSMS/login.html` (demo logins are listed at the top of `database/iptb_lsms.sql`),
    or go straight to `http://localhost/LSMS/module%201/products.php`.
 
 Database settings are in `includes/db.php` (XAMPP default: user `root`, empty password).
