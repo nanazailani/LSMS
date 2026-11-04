@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="color-scheme" content="light">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>IPTB-LSMS · Lubricant Product Management</title>
+<title>UNSAFE DEMO COPY · IPTB-LSMS · Lubricant Product Management</title>
 <script src="../lsms.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
@@ -13,6 +13,8 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+/* DEMO ONLY: banner so this copy is never confused with the real module */
+.demo{background:#a3231b;color:#fff;text-align:center;padding:6px 12px;font-weight:600;font-size:13px}
 .top{background:var(--surface);position:relative;border-bottom:4px solid var(--accent)}
 .top::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:4px;background:var(--yellow)}
 .top .in{padding:10px 28px;display:flex;align-items:center;gap:14px}
@@ -78,6 +80,7 @@ label input,label select{width:100%;margin-top:4px;font-weight:400}
 </style>
 </head>
 <body>
+<div class="demo">UNSAFE DEMO COPY: product name is NOT escaped. For the security demo only. Delete after presenting.</div>
 <header class="top"><div class="in"><div class="plate"><img alt="BURAQOIL logo" src="../images/buraqoil-logo.png"></div><div><strong>Lubricant Stock Management System</strong><span>IPTB Sdn Bhd</span></div></div></header>
 <div class="wrap">
   <h1>Lubricant products</h1>
@@ -222,7 +225,8 @@ function render(){
   };
   $('rows').innerHTML=list.map(function(p){return '<tr>'+
     '<td><button class="zoom" data-zoom="'+p.id+'" title="View larger image" aria-label="View larger image of '+esc(p.brand+' '+p.name+' '+p.grade)+'"><img class="thumb" src="'+thumb(p)+'" alt="" onerror="imgErr(this,'+p.id+')"></button></td><td>'+sku(p)+'</td>'+
-    '<td class="name"><strong>'+esc(p.brand)+' '+esc(p.name)+'</strong><small>'+esc(p.grade)+'</small></td>'+
+    /* DEMO ONLY: p.name is NOT escaped here (the real module uses esc(p.name)) */
+    '<td class="name"><strong>'+esc(p.brand)+' '+p.name+'</strong><small>'+esc(p.grade)+'</small></td>'+
     '<td>'+esc(p.type)+'</td><td class="num">'+packLabel(p.pack)+'</td>'+
     '<td class="num">'+p.cost.toFixed(2)+'</td><td class="num">'+p.price.toFixed(2)+'</td>'+
     '<td class="num">'+p.min+'</td>'+

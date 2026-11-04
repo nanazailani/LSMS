@@ -54,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if ($action === 'delete') {
     // BR-08: the confirmation is shown by the Delete dialog before this request is sent.
+    // A product that still has stock cannot be deleted (checked here on the server as well as in the dialog).
     $id = (int)($_POST['product_id'] ?? 0);
     try {
       $pdo->beginTransaction();
@@ -63,6 +64,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (!$row) {
         $pdo->rollBack();
         flash_and_go('error', 'That product no longer exists.', $filters);
+      }
+      $st = $pdo->prepare('SELECT COALESCE(SUM(current_stock), 0) FROM location_stock WHERE product_id = ?');
+      $st->execute([$id]);
+      if ((int)$st->fetchColumn() > 0) {
+        $pdo->rollBack();
+        flash_and_go('error', 'Cannot delete ' . $row['brand'] . ' ' . $row['product_name'] . ' ' . $row['viscosity_grade'] . ': it still has stock.', $filters);
       }
       $pdo->prepare('DELETE FROM location_stock WHERE product_id = ?')->execute([$id]);
       $pdo->prepare('DELETE FROM products WHERE product_id = ?')->execute([$id]);
@@ -1053,9 +1060,9 @@ $formQuery = page_url($filters);
       <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="action" value="delete">
       <input type="hidden" name="product_id" id="delId" value="0">
-      <h2>Delete this product?</h2>
+      <h2 id="delTitle">Delete this product?</h2>
       <p id="delText"></p>
-      <div class="actions"><button type="button" id="cancelDel">Keep product</button><button class="danger" type="submit">Delete product</button></div>
+      <div class="actions"><button type="button" id="cancelDel">Keep product</button><button class="danger" type="submit" id="delOk">Delete product</button></div>
     </form>
   </dialog>
 
@@ -1125,9 +1132,16 @@ $formQuery = page_url($filters);
           zm = e.target.closest('[data-zoom]');
         if (ed) openForm(JSON.parse(ed.dataset.edit));
         if (de) {
-          var n = +de.dataset.stock;
+          // A product that still has stock cannot be deleted (BR-08); the server checks this too.
+          var n = +de.dataset.stock,
+            blocked = n > 0;
           $('delId').value = de.dataset.del;
-          $('delText').textContent = '"' + de.dataset.name + '" will be removed from the product list.' + (n > 0 ? ' It still has ' + n + ' in stock.' : '');
+          $('delTitle').textContent = blocked ? 'Cannot delete this product' : 'Delete this product?';
+          $('delText').textContent = blocked ?
+            '"' + de.dataset.name + '" still has ' + n + ' in stock, so it cannot be deleted. Stock must be 0 first.' :
+            '"' + de.dataset.name + '" will be removed from the product list.';
+          $('delOk').hidden = blocked;
+          $('cancelDel').textContent = blocked ? 'Close' : 'Keep product';
           $('delDlg').showModal();
         }
         if (zm) {
