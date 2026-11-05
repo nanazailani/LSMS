@@ -16,7 +16,8 @@ BCS3263 Software Quality Assurance, Semester I 2026/2027.
   whole-number quantity of 1 or more, unit cost of 0 or more, no duplicate supplier invoice number,
   dates not in the future and delivery date not before the order date. A delivery cannot be edited or cancelled
   if that would take stock below 0 (units already sold). Staff can only see and change their own location
-  (checked by PHP); admin sees every location. The old prototype is kept as `module_2/stock-receiving.html`.
+  (checked by PHP); admin sees every location. Only the admin can place or cancel a purchase order;
+  staff receive the orders for their own location. The old prototype is kept as `module_2/stock-receiving.html`.
 * Modules 3 and 4 are still the HTML prototypes of the other members.
   The shared menu (`sidebar.js`) opens the PHP pages for Modules 1 and 2. The old prototype is kept as `module 1/products.html`.
 
