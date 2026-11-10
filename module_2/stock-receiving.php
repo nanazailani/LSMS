@@ -117,6 +117,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
   $action = (string)($_POST['action'] ?? '');
 
+  // Only the admin places and cancels purchase orders; staff receive them at their location.
+  if (($action === 'order_create' || $action === 'order_cancel') && !$isAdmin) {
+    flash_and_go('error', 'Only the admin can place or cancel purchase orders.', $filters);
+  }
+
   // ---------- Purchase order: create (stock does not change yet) ----------
   if ($action === 'order_create') {
     [$errors, $v] = validate_order($pdo, $_POST, $allowed, $today);
@@ -690,7 +695,7 @@ $canPickLoc = count($allowed) > 1;     // admin chooses the location of a new or
     <div class="sh" style="margin-top:8px">
       <div>
         <h3>Purchase orders</h3>
-        <p class="lead">Every order has an invoice you can view and print. Select Receive when the stock arrives.</p>
+        <p class="lead"><?= $isAdmin ? 'Every order has an invoice you can view and print.' : 'Orders are placed by the admin. Every order has an invoice you can view and print.' ?> Select Receive when the stock arrives.</p>
       </div>
       <div class="bar">
         <select name="ostatus" form="ff" aria-label="Filter orders by status" onchange="this.form.submit()">
@@ -699,7 +704,7 @@ $canPickLoc = count($allowed) > 1;     // admin chooses the location of a new or
             <option value="<?= $k ?>" <?= $fStatus === $k ? ' selected' : '' ?>><?= e($lab) ?></option>
           <?php endforeach; ?>
         </select>
-        <button class="btn" type="button" id="addOrd">Order new stock</button>
+        <?php if ($isAdmin): ?><button class="btn" type="button" id="addOrd">Order new stock</button><?php endif; ?>
       </div>
     </div>
     <div class="wrap">
@@ -733,7 +738,7 @@ $canPickLoc = count($allowed) > 1;     // admin chooses the location of a new or
                 <button type="button" class="ib" data-a="inv" data-id="<?= (int)$o['po_id'] ?>" title="View and print invoice" aria-label="Invoice <?= e($o['code']) ?>">🧾</button>
                 <?php if ($o['status'] === 'ordered'): ?>
                   <button type="button" class="ib ok" data-a="rcv" data-id="<?= (int)$o['po_id'] ?>" title="Receive stock" aria-label="Receive <?= e($o['code']) ?>">📦</button>
-                  <button type="button" class="ib d" data-a="cx" data-id="<?= (int)$o['po_id'] ?>" title="Cancel order" aria-label="Cancel <?= e($o['code']) ?>">🚫</button>
+                  <?php if ($isAdmin): ?><button type="button" class="ib d" data-a="cx" data-id="<?= (int)$o['po_id'] ?>" title="Cancel order" aria-label="Cancel <?= e($o['code']) ?>">🚫</button><?php endif; ?>
                 <?php endif; ?>
               </td>
             </tr>
@@ -868,6 +873,7 @@ $canPickLoc = count($allowed) > 1;     // admin chooses the location of a new or
     </div>
   </template>
 
+  <?php if ($isAdmin): ?>
   <dialog id="dOrd">
     <form method="post" action="<?= e($formQuery) ?>" novalidate>
       <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
@@ -894,6 +900,7 @@ $canPickLoc = count($allowed) > 1;     // admin chooses the location of a new or
       <div class="df"><button class="btn sec" type="button" data-close>Cancel</button><button class="btn" type="submit">Place order</button></div>
     </form>
   </dialog>
+  <?php endif; ?>
 
   <dialog id="dRecv">
     <form method="post" action="<?= e($formQuery) ?>" novalidate>
@@ -1124,7 +1131,7 @@ $canPickLoc = count($allowed) > 1;     // admin chooses the location of a new or
     }
 
     // ---------- Events ----------
-    $('addOrd').onclick = () => openOrder();
+    if($('addOrd')) $('addOrd').onclick = () => openOrder();
     $('add').onclick = () => openForm();
     $('ob').onclick = e => {const b = e.target.closest('button[data-a]'); if(b) ({inv: openInvoice, rcv: openReceive, cx: cancelOrder})[b.dataset.a](b.dataset.id)};
     $('tb').onclick = e => {const b = e.target.closest('button[data-a]'); if(b) ({v: openView, e: openForm, d: openDel})[b.dataset.a](b.dataset.id)};
